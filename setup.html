@@ -53,7 +53,7 @@
     <h2><span class="n">3</span>貼上「預先填入的連結」，自動產生設定</h2>
     <ol>
       <li>在 Google 表單編輯畫面右上角點「⋮」，選「取得預先填入的連結」。</li>
-      <li>「圈選事件」題勾選 <b>01</b>；「關注類型」題（如果有建立）隨便填，例如「測試」。</li>
+      <li>「圈選事件」題勾選 <b>01</b>；Email 題填 <b>test@example.com</b>；「關注類型」題（如果有建立）填「測試」。</li>
       <li>按最下方的「取得連結」，再按「複製連結」，貼到下面的框裡。</li>
     </ol>
     <input type="text" id="prefill" placeholder="https://docs.google.com/forms/d/e/……/viewform?usp=pp_url&entry.……=01">
@@ -105,6 +105,7 @@
   $("#status").innerHTML =
     line(/\/formResponse$/.test(f.action || ""), "表單送出網址 action", f.action) +
     line(/^entry\.\d+$/.test(f.picksEntry || ""), "圈選題代號 picksEntry", f.picksEntry) +
+    line(/^entry\.\d+$/.test(f.emailEntry || ""), "Email 題代號 emailEntry", f.emailEntry) +
     line(!f.personaEntry || /^entry\.\d+$/.test(f.personaEntry), "關注類型題代號 personaEntry（選填）", f.personaEntry) +
     line(!C.devPreview, "設計預覽模式已關閉 devPreview", String(C.devPreview)) +
     line(!!C.siteUrl, "正式網址 siteUrl", C.siteUrl) +
@@ -132,10 +133,12 @@
     u.searchParams.forEach((v, k) => { if (/^entry\.\d+$/.test(k)) (entries[k] = entries[k] || []).push(v); });
     const keys = Object.keys(entries);
     const picks = keys.find(k => entries[k].every(v => /^\d{2}$/.test(v)));
-    const persona = keys.find(k => k !== picks);
+    const email = keys.find(k => k !== picks && entries[k].some(v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)));
+    const persona = keys.find(k => k !== picks && k !== email);
     if (!picks) { out.innerHTML = `<p class="bad">找不到「圈選事件」題的代號。請確認取得連結前有勾選 01。</p>`; return; }
-    parsed = { action: u.origin + m[1] + "/formResponse", picksEntry: picks, personaEntry: persona || "" };
-    const snippet = `  googleForm: {\n    action: "${parsed.action}",\n    picksEntry: "${parsed.picksEntry}",\n    personaEntry: "${parsed.personaEntry}"\n  }`;
+    if (!email) { out.innerHTML = `<p class="bad">找不到 Email 題的代號。請確認取得連結前已填入 test@example.com。</p>`; return; }
+    parsed = { action: u.origin + m[1] + "/formResponse", picksEntry: picks, emailEntry: email, personaEntry: persona || "" };
+    const snippet = `  googleForm: {\n    action: "${parsed.action}",\n    picksEntry: "${parsed.picksEntry}",\n    emailEntry: "${parsed.emailEntry}",\n    personaEntry: "${parsed.personaEntry}"\n  }`;
     out.innerHTML = `<p class="ok">解析成功！</p>
       <p>打開 <code>assets/config.js</code>，把 <code>googleForm: { …… }</code> 整段換成下面這段：</p>
       <textarea id="snip" readonly style="min-height:110px">${esc(snippet)}</textarea>
@@ -151,10 +154,11 @@
     if (!cfg.action || !cfg.picksEntry) { r.innerHTML = `<p class="bad">還沒有表單設定，請先完成第 3 步，或在 config.js 填好。</p>`; return; }
     const body = new URLSearchParams();
     body.append(cfg.picksEntry, "01"); body.append(cfg.picksEntry, "02");
+    if (cfg.emailEntry) body.append(cfg.emailEntry, "test@example.com");
     if (cfg.personaEntry) body.append(cfg.personaEntry, "連線測試");
     try {
       await fetch(cfg.action, { method: "POST", mode: "no-cors", body });
-      r.innerHTML = `<p class="ok">已送出（${new Date().toLocaleTimeString()}）。請到表單回覆確認有一筆「01, 02」${cfg.personaEntry ? "、關注類型「連線測試」" : ""}。</p>`;
+      r.innerHTML = `<p class="ok">已送出（${new Date().toLocaleTimeString()}）。請到表單回覆確認有一筆「01, 02」與 Email「test@example.com」${cfg.personaEntry ? "、關注類型「連線測試」" : ""}。</p>`;
     } catch (e) {
       r.innerHTML = `<p class="bad">送不出去：${esc(e.message)}。請檢查網路，或確認瀏覽器的廣告阻擋外掛沒有擋住 docs.google.com。</p>`;
     }

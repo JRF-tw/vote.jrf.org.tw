@@ -29,7 +29,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .topbar .wrap{display:flex;align-items:center;gap:16px;height:64px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;white-space:nowrap}
-.brand svg{width:34px;height:34px;flex:none}
+.brand-logo{width:auto;height:40px;max-width:150px;object-fit:contain;flex:none}
 .brand small{display:block;font-weight:400;font-size:12px;color:var(--muted);line-height:1.2}
 .nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
@@ -254,6 +254,10 @@ dialog::backdrop{background:rgba(17,22,58,.55)}
 dialog h2{font-size:23px;line-height:1.5;margin:10px 40px 14px 0}
 dialog .full{white-space:pre-line;line-height:1.9;margin:0 0 20px}
 dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(--sun);padding-left:10px;margin:0 0 20px}
+.email-field{display:block;font-weight:700;margin:8px 0 6px}
+.email-input{display:block;width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit}
+.email-input:focus{border-color:var(--ink);outline:3px solid var(--sun);outline-offset:1px}
+.email-hint{margin:6px 0 18px;color:var(--muted);font-size:14px;line-height:1.5}
 .news{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:8px}
 .news li{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:10px 12px;background:var(--surface-2);border-radius:10px;font-size:15px}
 .news .d{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -289,6 +293,7 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
   .topics{grid-template-columns:1fr 1fr}
   .ev-pick .ring,.ev-pick .stamp-svg{width:54px;height:54px}
   .brand small{display:none}
+  .brand-logo{max-width:120px;height:34px}
   .brand span{display:none}
   .tray-slots{gap:5px}
   .tray-slot{width:30px;height:30px}

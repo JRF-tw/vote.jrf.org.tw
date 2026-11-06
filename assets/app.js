@@ -88,7 +88,8 @@
       </svg>
       <header class="topbar"><div class="wrap">
         <a class="brand" href="#" data-go="home" aria-label="回首頁">
-          ${STAMP()}<span>年度司法大事記<small>民間司法改革基金會</small></span>
+          <img class="brand-logo" src="${esc(C.logo || "images/jrf-logo.png")}" alt="民間司法改革基金會">
+          <span>年度司法大事記<small>民間司法改革基金會</small></span>
         </a>
         <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#" data-go="${k}">${t}</a>`).join("")}</nav>
       </div></header>
@@ -319,6 +320,9 @@
     openDialog(`
       <h2>這是你心中的 ${YEAR} 司法大事</h2>
       <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span>${esc(byCode[c].title)}<small>${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
+      <label class="email-field" for="voterEmail">Email</label>
+      <input class="email-input" id="voterEmail" type="email" autocomplete="email" placeholder="請填寫您的 Email">
+      <p class="email-hint">填寫email，我們會通知您投票結果（也避免重複投票）！</p>
       <p class="draft-note">送出後就不能修改。你的選擇會和其他人一起統計，在 ${C.announce} 和司改會的評選一起公布。</p>
       <div class="dlg-actions">
         <button class="btn btn-primary" id="doSend">送出我的清單</button>
@@ -329,12 +333,25 @@
   }
 
   async function sendList() {
+    const emailInput = $("#voterEmail");
+    const email = emailInput ? emailInput.value.trim() : "";
+    if (!email || !emailInput.checkValidity()) {
+      emailInput?.focus();
+      toast("請填寫有效的 Email，才能送出清單");
+      return;
+    }
     const btn = $("#doSend"); btn.disabled = true; btn.textContent = "送出中…";
     const f = C.googleForm;
+    if (!f.emailEntry) {
+      btn.disabled = false; btn.textContent = "送出我的清單";
+      toast("網站尚未完成 Email 表單設定，請聯絡管理者");
+      return;
+    }
     try {
       if (f.action && f.picksEntry) {
         const body = new URLSearchParams();
         st.picks.forEach(c => body.append(f.picksEntry, c));
+        if (f.emailEntry) body.append(f.emailEntry, email);
         if (f.personaEntry) body.append(f.personaEntry, personaOf(st.picks).name);
         await fetch(f.action, { method: "POST", mode: "no-cors", body });
       }
@@ -590,7 +607,7 @@
             <ol class="rules">
               <li>每人最多圈 ${C.maxPicks} 件事件，可以少於 ${C.maxPicks} 件。</li>
               <li>送出清單後無法修改，同一個瀏覽器只能送出一次。</li>
-              <li>不需要登入，也不會蒐集姓名、電子郵件等個人資料，只記錄你圈的事件與送出時間。</li>
+              <li>不需要登入；送出時會留下 Email，用於通知投票結果與協助辨識重複投票。</li>
               <li>年度結果代表參與者的關注，不是對案件或當事人的評價，也不是具代表性的抽樣民調。</li>
               <li>圈選到 ${fmtDate(DEADLINE)} 截止，結果在 ${C.announce} 公布。</li>
             </ol></div>
