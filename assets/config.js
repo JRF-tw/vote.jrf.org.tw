@@ -11,8 +11,8 @@ window.JRF_CONFIG = {
   devPreview: false,                       // true＝設計預覽模式（顯示圖片預留文字、示意連結），正式上線請保持 false
 
   googleForm: {
-    action: "",        // 例如 https://docs.google.com/forms/d/e/1FAIpQLSxxxx/formResponse
-    picksEntry: "",    // 「圈選事件」題的代號，例如 entry.123456789
-    personaEntry: ""   // （選填）「關注類型」題的代號，例如 entry.987654321
+    action: "https://docs.google.com/forms/d/e/1FAIpQLSeVv0Y7YC5aEJspfj3qvzWYJ5Fek9Gy0tY9iY7eAhucEhg9Ig/formResponse",
+    picksEntry: "entry.1333646016",
+    personaEntry: ""
   }
 };
