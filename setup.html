@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Google 表單嫁接小幫手（內部使用）</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  body{padding:0 0 60px}
+  .wrap{max-width:860px}
+  h1{font-family:var(--font-hand);font-size:36px;margin:40px 0 6px}
+  .lead{color:var(--muted);margin:0 0 28px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin:0 0 18px}
+  .step h2{font-size:20px;margin:0 0 10px;display:flex;gap:10px;align-items:center}
+  .step h2 .n{width:30px;height:30px;border-radius:50%;background:var(--sun);display:grid;place-items:center;font-size:16px;flex:none}
+  .step p,.step li{font-size:15.5px}
+  .step ol{padding-left:1.3em;margin:0 0 12px}
+  textarea,input[type=text]{width:100%;font:14px/1.6 ui-monospace,Menlo,Consolas,monospace;border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);color:var(--ink)}
+  textarea{min-height:120px;resize:vertical}
+  .row{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+  .ok{color:var(--mint);font-weight:700}
+  .bad{color:var(--stamp);font-weight:700}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:500}
+  .scroll{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  code{background:var(--surface-2);padding:1px 6px;border-radius:5px;font-size:14px}
+  .warnbox{background:#FFF4D6;border-radius:12px;padding:12px 16px;font-size:15px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Google 表單嫁接小幫手</h1>
+  <p class="lead">這一頁是給司改會同仁設定用的，網站上沒有連結到這裡。設定完成後可以把 setup.html 從 GitHub 刪除。</p>
+
+  <div class="step">
+    <h2><span class="n">1</span>目前網站設定檢查</h2>
+    <div id="status"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">2</span>建立表單題目時，要貼上的選項</h2>
+    <p>在 Google 表單新增一題「核取方塊」，題目名稱填「圈選事件」。點第一個選項的輸入框，把下面全部內容一次貼上，Google 表單會自動拆成 <b id="nOpt"></b> 個選項。</p>
+    <textarea id="opts" readonly></textarea>
+    <div class="row"><button class="btn btn-primary btn-small" data-copy="opts">複製選項</button></div>
+    <p>選項只放代碼，不放標題，這樣日後修改事件標題也不會影響已收到的資料。代碼與事件的對照如下：</p>
+    <div class="scroll"><table id="codeTable"></table></div>
+    <div class="row"><button class="btn btn-ghost btn-small" id="copyTsv">複製對照表（可直接貼進試算表）</button></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">3</span>貼上「預先填入的連結」，自動產生設定</h2>
+    <ol>
+      <li>在 Google 表單編輯畫面右上角點「⋮」，選「取得預先填入的連結」。</li>
+      <li>「圈選事件」題勾選 <b>01</b>；「關注類型」題（如果有建立）隨便填，例如「測試」。</li>
+      <li>按最下方的「取得連結」，再按「複製連結」，貼到下面的框裡。</li>
+    </ol>
+    <input type="text" id="prefill" placeholder="https://docs.google.com/forms/d/e/……/viewform?usp=pp_url&entry.……=01">
+    <div id="parsed" style="margin-top:12px"></div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">4</span>送出一筆測試資料</h2>
+    <p>用第 3 步解析出的設定（還沒貼就用 config.js 裡的設定），送出一筆內容為 <code>01, 02</code> 的測試。送出後到表單的「回覆」分頁，或連結的試算表，確認有沒有多出這一筆。</p>
+    <div class="row"><button class="btn btn-primary btn-small" id="testBtn">送出測試</button></div>
+    <div id="testResult"></div>
+    <div class="warnbox">Google 表單不會回傳「是否寫入成功」，所以這裡只能確認有沒有送出去。一定要到表單回覆裡親眼確認。測試完記得把測試資料刪掉。</div>
+  </div>
+
+  <div class="step">
+    <h2><span class="n">5</span>試算表統計公式</h2>
+    <p>在連結的試算表新增一個工作表，命名為「統計」。A 欄貼上第 2 步的對照表（A 代碼、B 事件、C 分類），然後：</p>
+    <table>
+      <tr><th>儲存格</th><th>公式</th><th>用途</th></tr>
+      <tr><td>D1</td><td><code>人數</code></td><td>欄位標題</td></tr>
+      <tr><td>D2</td><td><input type="text" readonly id="f1" style="min-width:300px"></td><td>這件事被幾個人圈選，往下拉到最後一件</td></tr>
+      <tr><td>F1</td><td><input type="text" readonly id="f2"></td><td>總共幾個人送出</td></tr>
+      <tr><td>E2</td><td><input type="text" readonly id="f3"></td><td>產生網站用的票數格式，往下拉</td></tr>
+      <tr><td>F2</td><td><input type="text" readonly id="f4"></td><td>把結果合成一行，公布結果時貼進 events.js</td></tr>
+    </table>
+    <p style="margin-top:10px;font-size:14px;color:var(--muted)">公式裡的「表單回應 1」是試算表自動建立的工作表名稱，如果你的介面顯示不同名稱（例如 Form Responses 1），請改成一樣的名稱。B 欄是「圈選事件」那一欄。</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="assets/config.js"></script>
+<script src="data/events.js"></script>
+<script>
+(function () {
+  const C = window.JRF_CONFIG, Y = C.year, EV = window.JRF_DATA[Y].events;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  let toastT;
+  const toast = m => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200); };
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+    toast("已複製");
+  }
+
+  /* 1. 設定檢查 */
+  const f = C.googleForm || {};
+  const line = (ok, label, val) => `<div>${ok ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'} ${label}：<code>${esc(val || "（未填）")}</code></div>`;
+  $("#status").innerHTML =
+    line(/\/formResponse$/.test(f.action || ""), "表單送出網址 action", f.action) +
+    line(/^entry\.\d+$/.test(f.picksEntry || ""), "圈選題代號 picksEntry", f.picksEntry) +
+    line(!f.personaEntry || /^entry\.\d+$/.test(f.personaEntry), "關注類型題代號 personaEntry（選填）", f.personaEntry) +
+    line(!C.devPreview, "設計預覽模式已關閉 devPreview", String(C.devPreview)) +
+    line(!!C.siteUrl, "正式網址 siteUrl", C.siteUrl) +
+    `<p style="margin:10px 0 0;font-size:14px;color:var(--muted)">年度 ${Y}｜事件 ${EV.length} 件｜每人最多 ${C.maxPicks} 件｜截止 ${esc(C.deadline)}</p>`;
+
+  /* 2. 選項與對照表 */
+  const codes = EV.map(e => e.code);
+  $("#opts").value = codes.join("\n");
+  $("#nOpt").textContent = codes.length;
+  $("#codeTable").innerHTML = `<tr><th>代碼</th><th>事件</th><th>分類</th></tr>` + EV.map(e => `<tr><td>${e.code}</td><td>${esc(e.title)}</td><td>${e.tag}</td></tr>`).join("");
+  $("#copyTsv").onclick = () => copy("代碼\t事件\t分類\n" + EV.map(e => `${e.code}\t${e.title}\t${e.tag}`).join("\n"));
+  document.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy($("#" + b.dataset.copy).value));
+
+  /* 3. 解析預先填入的連結 */
+  let parsed = null;
+  $("#prefill").addEventListener("input", () => {
+    const raw = $("#prefill").value.trim(), out = $("#parsed");
+    parsed = null;
+    if (!raw) { out.innerHTML = ""; return; }
+    if (/forms\.gle\//.test(raw)) { out.innerHTML = `<p class="bad">這是短網址，請貼「取得預先填入的連結」產生的完整網址（docs.google.com 開頭）。</p>`; return; }
+    let u; try { u = new URL(raw); } catch (e) { out.innerHTML = `<p class="bad">看起來不是網址，請重新複製。</p>`; return; }
+    const m = u.pathname.match(/^(\/forms\/(?:u\/\d+\/)?d\/e\/[^/]+)\//);
+    if (!m) { out.innerHTML = `<p class="bad">網址格式不對：要是 docs.google.com/forms/d/e/…… 開頭的連結。如果網址是 /forms/d/（沒有 /e/），那是編輯網址，請改用「取得預先填入的連結」。</p>`; return; }
+    const entries = {};
+    u.searchParams.forEach((v, k) => { if (/^entry\.\d+$/.test(k)) (entries[k] = entries[k] || []).push(v); });
+    const keys = Object.keys(entries);
+    const picks = keys.find(k => entries[k].every(v => /^\d{2}$/.test(v)));
+    const persona = keys.find(k => k !== picks);
+    if (!picks) { out.innerHTML = `<p class="bad">找不到「圈選事件」題的代號。請確認取得連結前有勾選 01。</p>`; return; }
+    parsed = { action: u.origin + m[1] + "/formResponse", picksEntry: picks, personaEntry: persona || "" };
+    const snippet = `  googleForm: {\n    action: "${parsed.action}",\n    picksEntry: "${parsed.picksEntry}",\n    personaEntry: "${parsed.personaEntry}"\n  }`;
+    out.innerHTML = `<p class="ok">解析成功！</p>
+      <p>打開 <code>assets/config.js</code>，把 <code>googleForm: { …… }</code> 整段換成下面這段：</p>
+      <textarea id="snip" readonly style="min-height:110px">${esc(snippet)}</textarea>
+      <div class="row"><button class="btn btn-primary btn-small" id="copySnip">複製設定</button></div>
+      ${persona ? "" : `<p style="font-size:14px;color:var(--muted)">沒有找到「關注類型」題，這是選填的，不影響使用。</p>`}`;
+    $("#copySnip").onclick = () => copy(snippet);
+  });
+
+  /* 4. 測試送出 */
+  $("#testBtn").onclick = async () => {
+    const cfg = parsed || f;
+    const r = $("#testResult");
+    if (!cfg.action || !cfg.picksEntry) { r.innerHTML = `<p class="bad">還沒有表單設定，請先完成第 3 步，或在 config.js 填好。</p>`; return; }
+    const body = new URLSearchParams();
+    body.append(cfg.picksEntry, "01"); body.append(cfg.picksEntry, "02");
+    if (cfg.personaEntry) body.append(cfg.personaEntry, "連線測試");
+    try {
+      await fetch(cfg.action, { method: "POST", mode: "no-cors", body });
+      r.innerHTML = `<p class="ok">已送出（${new Date().toLocaleTimeString()}）。請到表單回覆確認有一筆「01, 02」${cfg.personaEntry ? "、關注類型「連線測試」" : ""}。</p>`;
+    } catch (e) {
+      r.innerHTML = `<p class="bad">送不出去：${esc(e.message)}。請檢查網路，或確認瀏覽器的廣告阻擋外掛沒有擋住 docs.google.com。</p>`;
+    }
+  };
+
+  /* 5. 試算表公式 */
+  const sheet = "'表單回應 1'";
+  $("#f1").value = `=SUMPRODUCT(--ISNUMBER(SEARCH(", "&TEXT(A2,"00")&",", ", "&${sheet}!$B$2:$B&",")))`;
+  $("#f2").value = `=COUNTA(${sheet}!B2:B)`;
+  $("#f3").value = `=""""&TEXT(A2,"00")&""": "&D2`;
+  $("#f4").value = `="votes: {"&TEXTJOIN(", ",TRUE,E2:E${EV.length + 1})&"}"`;
+  ["f1", "f2", "f3", "f4"].forEach(id => $("#" + id).addEventListener("focus", e => e.target.select()));
+})();
+</script>
+</body>
+</html>
