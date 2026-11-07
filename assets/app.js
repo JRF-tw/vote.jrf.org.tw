@@ -63,6 +63,8 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
+    const navName = (NAV.find(n => n[0] === PAGE) || [])[1];
+    document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
     document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === PAGE));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
@@ -94,7 +96,7 @@
         <a class="brand" href="#" data-go="home" aria-label="回首頁">
           ${STAMP()}<span>年度司法大事記<small>民間司法改革基金會</small></span>
         </a>
-        <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#" data-go="${k}">${t}</a>`).join("")}</nav>
+        <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#${k}" data-go="${k}">${t}</a>`).join("")}</nav>
       </div></header>
       <main id="main"></main>`);
     document.body.insertAdjacentHTML("beforeend", `
@@ -132,7 +134,8 @@
     : DEV ? `<span class="pic-ph"><span><b>🖼</b>圖片預留<br>建議 3:2</span></span>` : `<span class="pic-ph pic-empty">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
-  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>` : "";
+  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}"><span class="pic-wrap">${picHTML(e)}${e.image && e.imageSource ? `<span class="pic-credit">圖／${esc(e.imageSource[0])}</span>` : ""}</span></button>` : "";
+  const picCredit = e => e.image && e.imageSource ? `<p class="pic-source">圖片來源：<a href="${esc(e.imageSource[1])}" target="_blank" rel="noopener">${esc(e.imageSource[0])}</a></p>` : "";
   const mediaStyle = m => { const c = MEDIA[m] || ["#ECEEF2", "#4A5168"]; return `background:${c[0]};color:${c[1]}`; };
   const newsUrl = n => n.url || `https://www.google.com/search?q=${encodeURIComponent(n.media + " " + n.title)}`;
 
@@ -144,7 +147,7 @@
     openDialog(`
       <div class="d-meta"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${dateOf(e)}</span></div>
       <h2 class="d-title">${esc(e.title)}</h2>
-      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}</div>` : ""}
+      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}${picCredit(e)}</div>` : ""}
       <h3 class="d-sec">事件回顧</h3>
       <div class="full">${e.full ? paras(e.full) : paras(e.summary) + (DEV ? `<p class="draft-note" style="text-indent:0">詳細版撰寫中，目前先顯示簡短版。</p>` : "")}</div>
       <h3 class="d-sec">時間軸</h3>
@@ -327,7 +330,7 @@
     openDialog(`
       <h2>這是你心中的 ${YEAR} 司法大事</h2>
       <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span>${esc(byCode[c].title)}<small>${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
-      <p class="draft-note">按下按鈕後會開啟 Google 表單，已幫你勾好這些事件。請登入 Google 帳號後按「提交」，每個帳號只能送出一次，送出後就不能修改。你的選擇會和其他人一起統計，在 ${C.announce} 和司改會的評選一起公布。</p>
+      <p class="draft-note">接下來會開啟 Google 表單並勾好這些事件，登入 Google 帳號後按「提交」就完成了。每個帳號只能送出一次，送出後無法修改。</p>
       <div class="dlg-actions">
         <button class="btn btn-primary" id="doSend">前往 Google 表單送出</button>
         <button class="btn btn-ghost" id="dlgBack">再看看</button>
@@ -356,8 +359,8 @@
     window.open(formUrl(), "_blank", "noopener");
     openDialog(`
       <h2>在 Google 表單送出了嗎？</h2>
-      <p>表單已在新分頁開啟。登入 Google 帳號、確認勾選的事件後，按表單最下方的「提交」才算完成。</p>
-      <p class="draft-note">沒看到新分頁？可能被瀏覽器擋下了，請按「重新開啟表單」。</p>
+      <p>表單已在新分頁開啟，登入後按「提交」才算完成。</p>
+      <p class="draft-note">沒看到新分頁？請按「重新開啟表單」。</p>
       <div class="dlg-actions">
         <button class="btn btn-primary" id="doneSend">我已經送出了</button>
         <button class="btn btn-ghost" id="reopen">重新開啟表單</button>
@@ -563,7 +566,7 @@
     let path = "", pen = false;
     points.forEach(([, v], i) => { if (v == null) { pen = false; return; } path += `${pen ? "L" : "M"}${xs(i).toFixed(1)} ${ys(v).toFixed(1)} `; pen = true; });
     const dots = points.map(([lab, v], i) => `<text x="${xs(i)}" y="${h - 8}" text-anchor="middle">${lab}</text>
-      ${v == null ? `<text x="${xs(i)}" y="${ys(6)}" text-anchor="middle">待補</text>` : `<circle cx="${xs(i)}" cy="${ys(v)}" r="4.5" fill="${color}"/><text x="${xs(i)}" y="${ys(v) - 10}" text-anchor="middle">${v}</text>`}`).join("");
+      ${v == null ? `<text x="${xs(i)}" y="${ys(6)}" text-anchor="middle">無資料</text>` : `<circle cx="${xs(i)}" cy="${ys(v)}" r="4.5" fill="${color}"/><text x="${xs(i)}" y="${ys(v) - 10}" text-anchor="middle">${v}</text>`}`).join("");
     return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="歷年趨勢折線圖，縱軸為百分比">${grid}<path d="${path}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
   }
   function pagePolls() {
@@ -581,20 +584,13 @@
       <div class="split-legend"><span>${s.yesLabel} <b style="color:var(--mint)">${s.yes}%</b></span><span>${s.noLabel} <b style="color:var(--stamp)">${s.no}%</b></span></div>
       <p class="meta">資料來源：<a href="${s.source[1]}" target="_blank" rel="noopener">${s.source[0]}</a></p></article>`).join("");
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
-        <p class="page-sub">回顧這一年，也看看民眾怎麼看司法。我們整理了幾個長期調查和近期民調，資料整理至 ${P.updated}。</p></div>
-      <section style="padding-top:24px"><div class="wrap"><div class="explain">
-        <h2>先說一件事：不同民調的數字，不能直接比</h2>
-        <p>同樣是 2025 年，司法院調查的法官信任度接近六成，中正大學調查認為法官能公正審理刑事案件的卻只有三成三。這不代表誰算錯，而是問的問題、問的時間和問的對象都不一樣。看民調時，最好在同一個單位的歷年數字裡看變化。</p>
-        <dl>
-          <div><dt>問題怎麼問</dt><dd>「信不信任法官」和「法官能不能公正審理刑事案件」是兩個不同的問題，得到的答案自然不同。</dd></div>
-          <div><dt>什麼時候問</dt><dd>短時間內完成的電訪，容易受到當時重大案件新聞的影響；調查期間較長的，起伏通常比較小。</dd></div>
-          <div><dt>問卷裡還有什麼</dt><dd>司法院曾指出，如果司法題目和治安、詐騙等題目放在一起問，民眾的回答可能受到影響。</dd></div>
-        </dl></div></div></section>
+        <p class="page-sub">民眾怎麼看司法？這裡整理了幾項長期調查和近期民調，資料更新至 ${P.updated}。</p></div>
+      <section style="padding-top:24px"><div class="wrap"><p class="explain"><b>不同單位的民調不能直接比較。</b>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，建議比較同一單位歷年數字較準。</p></div></section>
       <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">長期追蹤</h2>
-        <p class="sec-sub">同一個單位、同一個題目逐年調查，最適合用來看趨勢。縱軸都是 0 到 100%，避免把小變化放大。</p>
+        <p class="sec-sub">司法院和中正大學犯罪研究中心這兩項追蹤超過十年的調查，近幾年民眾對法官的評價都比 2010 年代中期高。司法院的調查中，信任法官的比例在 2014 到 2019 年介於 35.8% 到 44.6%，2020 年起都超過五成，近四年維持在 56% 到 60% 之間。中正大學犯罪研究中心的調查中，認為法官能公正審理刑事案件的比例，2014、2015、2018 年介於 15% 到 22%，2019 年以後多在 27% 到 36% 之間；2024 年曾升到 45.8%，隔年又回到 33%，起伏比司法院的調查大，正面評價也始終不到一半。台灣民意基金會的兩項調查只有兩、三個時間點，還看不出趨勢。</p>
         <div class="poll-grid">${trends}</div></div></section>
       <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">近期調查</h2>
-        <p class="sec-sub">單次調查的結果，綠色是正面回答、紅色是負面回答，中間空白是沒意見或不知道。</p>
+        <p class="sec-sub">近期的調查中，問到司法能否獨立、不受政黨影響時，負面回答都超過一半：台灣議題研究中心 2026 年 9 月的調查，有 54% 的民眾對政府維持司法公正與獨立沒信心；美麗島電子報 2025 年 12 月的調查，有 59.9% 的民眾不相信大法官能超越黨派。問到對台灣司法整體有沒有信心時，台灣民意基金會 2025 年 1 月的調查中正反兩方接近，有信心 44.8%、沒信心 49.2%。問到國民法官這項具體制度時，評價明顯正面，司法院 2022 年 6 月的調查有 82.2% 的民眾認同這項制度讓台灣司法更好。</p>
         <div class="poll-grid">${snaps}</div></div></section>`);
   }
 
@@ -605,24 +601,22 @@
         <div>
           <div class="card"><h2>為什麼要回顧一年的司法大事？</h2>
             <p>司法離每個人的生活都很近，但新聞一則接一則，很容易看過就忘。每到年底，我們把這一年重要的司法事件整理成大事記，邀請大家一起回頭看看：哪些事情影響了我們的權利，哪些改革還在路上。</p>
-            <p>事件由民間司改會依當年度新聞整理，說明力求中立呈現。回顧之後，你也可以圈出心中最重要的幾件。大家的選擇會在 ${C.announce} 與司改會評選一起公布，看看彼此關心的地方。</p></div>
+            <p>事件由民間司改會依當年度新聞整理。回顧之後，你也可以圈出心中最重要的幾件。大家的選擇會在 ${C.announce} 與司改會評選一起公布，看看彼此關心的地方。</p></div>
           <div class="card" style="margin-top:18px"><h2>參與方式與隱私</h2>
             <ol class="rules">
-              <li>每人最多圈 ${C.maxPicks} 件事件，可以少於 ${C.maxPicks} 件。</li>
-              <li>送出清單後無法修改。</li>
-              <li>圈選結果透過司改會的 Google 表單送出。為了避免重複送出與灌票，表單需要登入 Google 帳號，每個帳號限填一次，並會記錄你的 Google 帳號電子郵件。</li>
-              <li>電子郵件只用來確認每人送出一次，不會公開、不會用於寄送宣傳，也不會提供給其他單位；統計完成、結果公布後即刪除。資料存放在 Google 的服務上，只有負責統計的司改會同仁能查看。</li>
-              <li>你可以隨時透過司改會官網的聯絡方式，要求查詢或刪除你的資料。不登入就無法送出，但仍可以瀏覽所有內容。網頁字型由 Google Fonts 提供。</li>
-              <li>年度結果代表參與者的關注，不是對案件或當事人的評價，也不是具代表性的抽樣民調。</li>
+              <li>每人最多圈 ${C.maxPicks} 件，送出後無法修改。</li>
+              <li>圈選透過司改會的 Google 表單送出，要登入 Google 帳號，每個帳號限填一次，表單會記錄你的電子郵件。</li>
+              <li>電子郵件只用來確認每人送出一次，不公開、不另作他用，只有負責統計的司改會同仁看得到，結果公布後刪除。想查詢或刪除自己的資料，請透過司改會官網與我們聯絡。</li>
               <li>圈選到 ${fmtDate(DEADLINE)} 截止，結果在 ${C.announce} 公布。</li>
             </ol></div>
           <div class="card" style="margin-top:18px"><h2>免責聲明</h2>
             <ol class="rules">
-              <li>事件內容由民間司改會依公開的新聞報導、判決與官方資料整理，反映整理當時已知的資訊，之後的發展可能不在其中。內容僅供公共討論參考，不是法律意見，個案問題請洽詢律師或法律扶助基金會。</li>
-              <li>尚未判決確定的案件，被告依法推定無罪。列入大事記代表這件事在當年度受到社會關注，不代表司改會認定任何人有罪或有過失。</li>
-              <li>相關新聞連結到外部網站，內容由各媒體負責，連結可能失效或內容被修改。</li>
-              <li>年度結果是參與者自願圈選的統計，不是具代表性的抽樣民調，不能推論為全體民眾的意見。</li>
-              <li>內容如有錯誤或需要更正，歡迎透過司改會官網與我們聯絡，我們會儘快查證處理。</li>
+              <li>事件內容依公開的新聞報導、判決與官方資料整理，反映整理當時的資訊，不是法律意見。</li>
+              <li>尚未判決確定的案件，被告依法推定無罪；列入大事記不代表司改會認定任何人有罪。</li>
+              <li>事件圖片引用自各媒體報導，版權屬原媒體，出處標示於圖片下方；權利人如不同意使用，請與我們聯絡，我們會立即撤下。</li>
+              <li>新聞連結的內容由各媒體負責。</li>
+              <li>年度結果是參與者自願圈選的統計，不是抽樣民調。</li>
+              <li>內容如有錯誤，歡迎透過司改會官網與我們聯絡。</li>
             </ol></div>
         </div>
         <div class="support"><h3>一起讓司法更值得信賴</h3>

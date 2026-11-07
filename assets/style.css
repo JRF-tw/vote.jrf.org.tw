@@ -224,12 +224,6 @@ section{padding:28px 0 56px}
 .split .yes{background:var(--mint)} .split .no{background:var(--stamp)}
 .split-legend{display:flex;justify-content:space-between;font-size:15px}
 .split-legend b{font-family:var(--font-hand);font-size:24px}
-.explain{background:var(--ink);color:var(--bg);border-radius:22px;padding:28px}
-.explain h2{font-family:var(--font-hand);font-size:30px;margin:0 0 12px}
-.explain p{margin:0 0 12px;opacity:.9;max-width:52em}
-.explain dl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0 0}
-.explain dt{font-weight:700;margin-bottom:4px}
-.explain dd{margin:0;opacity:.85;font-size:15px}
 
 /* ===== 關於 ===== */
 .about{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:start}
@@ -273,7 +267,6 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
   .doors{grid-template-columns:1fr}
   .topics{grid-template-columns:repeat(3,1fr)}
   .figures{grid-template-columns:1fr 1fr}
-  .explain dl{grid-template-columns:1fr}
   .month{grid-template-columns:1fr;gap:12px}
   .month::before{display:none}
   .month-label{position:static;text-align:left;display:flex;align-items:baseline;gap:8px}
@@ -332,6 +325,12 @@ dialog{max-width:760px}
 .d-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:15px;color:var(--muted)}
 .d-title{font-size:26px!important;line-height:1.45!important;margin:10px 40px 18px 0!important}
 .d-pic{margin:0 0 22px}
+.explain{margin:0;max-width:52em;padding:2px 0 2px 14px;border-left:3px solid var(--line);font-size:15px;line-height:1.75;color:var(--muted)}
+.explain b{color:var(--ink);font-weight:700}
+.pic-wrap{position:relative;display:block}
+.pic-credit{position:absolute;right:8px;bottom:8px;font-size:11px;line-height:1;padding:4px 6px;border-radius:6px;background:rgba(27,37,89,.72);color:#fff;pointer-events:none}
+.pic-source{margin:6px 0 0;font-size:13px;color:var(--muted);text-align:right}
+.pic-source a{color:inherit}
 .d-sec{font-family:var(--font-hand);font-size:22px;margin:26px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
 .full{line-height:1.95;font-size:16.5px;margin:0}
 .tl{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
