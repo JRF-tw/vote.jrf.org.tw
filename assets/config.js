@@ -12,7 +12,7 @@ window.JRF_CONFIG = {
   /* Google 表單：網站把圈選預先填入表單，民眾登入 Google 帳號後在表單頁送出（每個帳號限填一次）。
      設定方式見 docs/部署說明.md */
   googleForm: {
-    viewUrl: "",     // 表單網址，結尾是 /viewform，例如 https://docs.google.com/forms/d/e/1FAIpQLS…/viewform
-    picksEntry: ""   // 「圈選事件」題的代號，例如 entry.123456789
+    viewUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeVv0Y7YC5aEJspfj3qvzWYJ5Fek9Gy0tY9iY7eAhucEhg9Ig/viewform",  // 表單網址，結尾是 /viewform，例如 https://docs.google.com/forms/d/e/1FAIpQLS…/viewform
+    picksEntry: "entry.1333646016"  // 「圈選事件」題的代號，例如 entry.123456789
   }
 };
