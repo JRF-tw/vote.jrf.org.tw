@@ -585,14 +585,12 @@
       <p class="meta">資料來源：<a href="${s.source[1]}" target="_blank" rel="noopener">${s.source[0]}</a></p></article>`).join("");
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
         <p class="page-sub">民眾怎麼看司法？這裡整理了幾項長期調查和近期民調，資料更新至 ${P.updated}。</p></div>
-      <section style="padding-top:24px"><div class="wrap"><div class="explain">
-        <h2>不同單位的民調不能直接比較</h2>
-        <p>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，要看變化，請比較同一個單位歷年的數字。</p></div></div></section>
+      <section style="padding-top:24px"><div class="wrap"><p class="explain"><b>不同單位的民調不能直接比較。</b>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，建議比較同一單位歷年數字較準。</p></div></section>
       <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">長期追蹤</h2>
-        <p class="sec-sub">同一個單位、同一個題目的逐年調查。</p>
+        <p class="sec-sub">司法院的調查中，信任法官的民眾在 2014 到 2019 年大約四成，2016 年最低，為 35.8%；2020 年起升到五成以上，2025 年為 59.8%。中正大學犯罪研究中心的調查中，認為法官能公正審理刑事案件的民眾，2014 到 2023 年介於 15% 到 36% 之間，2024 年升到 45.8%，2025 年又降回三成三左右。台灣民意基金會的調查中，滿意總統司法改革表現的民眾從 2017 年 5 月的 34.7% 升到 2025 年 5 月的 40%；對台灣司法有信心的民眾，2024 年 9 月和 2025 年 1 月都在四成四左右。</p>
         <div class="poll-grid">${trends}</div></div></section>
       <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">近期調查</h2>
-        <p class="sec-sub">綠色是正面回答，紅色是負面回答，中間空白是沒意見或不知道。</p>
+        <p class="sec-sub">2025 年以後的三份調查，負面回答都多於正面。台灣議題研究中心 2026 年 9 月的調查中，對政府「維持司法公正與獨立」沒信心的民眾占 54%，有信心的占 39.5%；美麗島電子報 2025 年 12 月的調查中，不相信大法官能超越黨派、獨立行使職權的民眾占 59.9%；台灣民意基金會 2025 年 1 月的調查中，對台灣司法沒信心的占 49.2%，略高於有信心的 44.8%。司法院 2022 年 6 月針對國民法官制度的調查，則有 82.2% 的民眾認同這項制度讓台灣司法更好。</p>
         <div class="poll-grid">${snaps}</div></div></section>`);
   }
 
