@@ -134,7 +134,8 @@
     : DEV ? `<span class="pic-ph"><span><b>🖼</b>圖片預留<br>建議 3:2</span></span>` : `<span class="pic-ph pic-empty">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
-  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>` : "";
+  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}"><span class="pic-wrap">${picHTML(e)}${e.image && e.imageSource ? `<span class="pic-credit">圖／${esc(e.imageSource[0])}</span>` : ""}</span></button>` : "";
+  const picCredit = e => e.image && e.imageSource ? `<p class="pic-source">圖片來源：<a href="${esc(e.imageSource[1])}" target="_blank" rel="noopener">${esc(e.imageSource[0])}</a></p>` : "";
   const mediaStyle = m => { const c = MEDIA[m] || ["#ECEEF2", "#4A5168"]; return `background:${c[0]};color:${c[1]}`; };
   const newsUrl = n => n.url || `https://www.google.com/search?q=${encodeURIComponent(n.media + " " + n.title)}`;
 
@@ -146,7 +147,7 @@
     openDialog(`
       <div class="d-meta"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${dateOf(e)}</span></div>
       <h2 class="d-title">${esc(e.title)}</h2>
-      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}</div>` : ""}
+      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}${picCredit(e)}</div>` : ""}
       <h3 class="d-sec">事件回顧</h3>
       <div class="full">${e.full ? paras(e.full) : paras(e.summary) + (DEV ? `<p class="draft-note" style="text-indent:0">詳細版撰寫中，目前先顯示簡短版。</p>` : "")}</div>
       <h3 class="d-sec">時間軸</h3>
@@ -614,6 +615,7 @@
             <ol class="rules">
               <li>事件內容依公開的新聞報導、判決與官方資料整理，反映整理當時的資訊，不是法律意見。</li>
               <li>尚未判決確定的案件，被告依法推定無罪；列入大事記不代表司改會認定任何人有罪。</li>
+              <li>事件圖片引用自各媒體報導，版權屬原媒體，出處標示於圖片下方；權利人如不同意使用，請與我們聯絡，我們會立即撤下。</li>
               <li>新聞連結的內容由各媒體負責。</li>
               <li>年度結果是參與者自願圈選的統計，不是抽樣民調。</li>
               <li>內容如有錯誤，歡迎透過司改會官網與我們聯絡。</li>
