@@ -107,7 +107,7 @@
       </div>
       <footer><div class="wrap">
         <div>© 財團法人民間司法改革基金會<br>台北市大同區民生西路290號4樓｜(02)2523-1178</div>
-        <div><a href="https://www.jrf.org.tw/" target="_blank" rel="noopener">司改會官網</a>　<a href="#" data-go="about">參與方式與隱私</a></div>
+        <div><a href="https://www.jrf.org.tw/" target="_blank" rel="noopener">司改會官網</a>　<a href="#" data-go="about">隱私與免責聲明</a></div>
       </div></footer>
       <dialog id="dlg"><button class="dlg-close" id="dlgClose" aria-label="關閉">×</button><div class="dlg-inner" id="dlgInner"></div></dialog>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>`);
@@ -327,55 +327,43 @@
     openDialog(`
       <h2>這是你心中的 ${YEAR} 司法大事</h2>
       <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span>${esc(byCode[c].title)}<small>${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
-      <p class="draft-note">送出後就不能修改。你的選擇會和其他人一起統計，在 ${C.announce} 和司改會的評選一起公布。</p>
-      <div class="ts-box" id="tsBox"></div>
+      <p class="draft-note">按下按鈕後會開啟 Google 表單，已幫你勾好這些事件。請登入 Google 帳號後按「提交」，每個帳號只能送出一次，送出後就不能修改。你的選擇會和其他人一起統計，在 ${C.announce} 和司改會的評選一起公布。</p>
       <div class="dlg-actions">
-        <button class="btn btn-primary" id="doSend" ${S.url && S.turnstileSiteKey ? "disabled" : ""}>送出我的清單</button>
+        <button class="btn btn-primary" id="doSend">前往 Google 表單送出</button>
         <button class="btn btn-ghost" id="dlgBack">再看看</button>
       </div>`);
     $("#dlgBack").onclick = () => $("#dlg").close();
     $("#doSend").onclick = sendList;
-    renderTurnstile();
   }
 
-  /* ---------- 送出：Cloudflare Turnstile 人機驗證 → Worker → Google 表單 ---------- */
-  const S = C.submit || {};
-  let tsId = null, tsToken = "";
-  async function renderTurnstile() {
-    tsToken = "";
-    if (!S.url || !S.turnstileSiteKey) return;
-    for (let i = 0; i < 50 && !window.turnstile; i++) await new Promise(r => setTimeout(r, 100));   // 等驗證元件載入，最多 5 秒
-    const box = $("#tsBox");
-    if (!box) return;
-    if (!window.turnstile) { box.innerHTML = `<p class="draft-note">人機驗證載入失敗，請確認網路連線，或關閉廣告阻擋外掛後重新整理。</p>`; return; }
-    try { if (tsId !== null) window.turnstile.remove(tsId); } catch (e) { }
-    const btn = () => $("#doSend");
-    tsId = window.turnstile.render(box, {
-      sitekey: S.turnstileSiteKey, language: "zh-tw",
-      size: box.clientWidth < 300 ? "compact" : "normal",   // 標準版固定 300px 寬，窄螢幕改用精簡版
-      callback: t => { tsToken = t; if (btn()) btn().disabled = false; },
-      "expired-callback": () => { tsToken = ""; if (btn()) btn().disabled = true; },
-      "error-callback": () => { tsToken = ""; if (btn()) btn().disabled = true; }
-    });
+  /* ---------- 送出：把圈選預先填入 Google 表單，民眾登入 Google 帳號後在表單頁送出 ---------- */
+  const F = C.googleForm || {};
+  function formUrl() {
+    const u = new URL(F.viewUrl);
+    u.searchParams.set("usp", "pp_url");
+    st.picks.forEach(c => u.searchParams.append(F.picksEntry, c));
+    return u.href;
   }
-
-  async function sendList() {
-    const btn = $("#doSend"); btn.disabled = true; btn.textContent = "送出中…";
-    try {
-      if (S.url) {
-        const r = await fetch(S.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks: st.picks, token: tsToken }) });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.ok) throw new Error(j.error || "http_" + r.status);
-      } else if (!DEV) throw new Error("not_configured");   // 設計預覽模式可以不設定送出網址
-      st.sent = true; st.at = Date.now(); save();
-      go("result"); toast("已送出，謝謝你一起回顧這一年！");
-    } catch (e) {
-      btn.textContent = "送出我的清單";
-      const msg = { captcha: "人機驗證沒有通過，請再驗證一次", closed: "圈選已經截止，謝謝你的參與", not_configured: "送出功能尚未設定完成，請稍後再試" }[e.message];
-      toast(msg || "送出失敗，請確認網路連線後再試一次");
-      if (S.turnstileSiteKey && window.turnstile && tsId !== null) { tsToken = ""; window.turnstile.reset(tsId); }   // token 只能用一次，失敗後要重新驗證
-      else btn.disabled = false;
+  function markSent() {
+    st.sent = true; st.at = Date.now(); save();
+    $("#dlg").close(); go("result"); toast("謝謝你一起回顧這一年！");
+  }
+  function sendList() {
+    if (!F.viewUrl || !F.picksEntry) {
+      if (DEV) return markSent();   // 設計預覽模式可以不設定表單
+      return toast("送出功能尚未設定完成，請稍後再試");
     }
+    window.open(formUrl(), "_blank", "noopener");
+    openDialog(`
+      <h2>在 Google 表單送出了嗎？</h2>
+      <p>表單已在新分頁開啟。登入 Google 帳號、確認勾選的事件後，按表單最下方的「提交」才算完成。</p>
+      <p class="draft-note">沒看到新分頁？可能被瀏覽器擋下了，請按「重新開啟表單」。</p>
+      <div class="dlg-actions">
+        <button class="btn btn-primary" id="doneSend">我已經送出了</button>
+        <button class="btn btn-ghost" id="reopen">重新開啟表單</button>
+      </div>`);
+    $("#doneSend").onclick = markSent;
+    $("#reopen").onclick = () => window.open(formUrl(), "_blank", "noopener");
   }
 
   /* ===================== 年度結果 ===================== */
@@ -621,11 +609,20 @@
           <div class="card" style="margin-top:18px"><h2>參與方式與隱私</h2>
             <ol class="rules">
               <li>每人最多圈 ${C.maxPicks} 件事件，可以少於 ${C.maxPicks} 件。</li>
-              <li>送出清單後無法修改，同一個瀏覽器只能送出一次。</li>
-              <li>不需要登入，也不會蒐集姓名、電子郵件等個人資料，只記錄你圈的事件與送出時間。</li>
-              <li>送出前會經過 Cloudflare Turnstile 人機驗證，用來阻擋程式自動灌票。圈選結果存放在司改會的 Google 表單，只有司改會同仁能查看。網頁字型由 Google Fonts 提供。</li>
+              <li>送出清單後無法修改。</li>
+              <li>圈選結果透過司改會的 Google 表單送出。為了避免重複送出與灌票，表單需要登入 Google 帳號，每個帳號限填一次，並會記錄你的 Google 帳號電子郵件。</li>
+              <li>電子郵件只用來確認每人送出一次，不會公開、不會用於寄送宣傳，也不會提供給其他單位；統計完成、結果公布後即刪除。資料存放在 Google 的服務上，只有負責統計的司改會同仁能查看。</li>
+              <li>你可以隨時透過司改會官網的聯絡方式，要求查詢或刪除你的資料。不登入就無法送出，但仍可以瀏覽所有內容。網頁字型由 Google Fonts 提供。</li>
               <li>年度結果代表參與者的關注，不是對案件或當事人的評價，也不是具代表性的抽樣民調。</li>
               <li>圈選到 ${fmtDate(DEADLINE)} 截止，結果在 ${C.announce} 公布。</li>
+            </ol></div>
+          <div class="card" style="margin-top:18px"><h2>免責聲明</h2>
+            <ol class="rules">
+              <li>事件內容由民間司改會依公開的新聞報導、判決與官方資料整理，反映整理當時已知的資訊，之後的發展可能不在其中。內容僅供公共討論參考，不是法律意見，個案問題請洽詢律師或法律扶助基金會。</li>
+              <li>尚未判決確定的案件，被告依法推定無罪。列入大事記代表這件事在當年度受到社會關注，不代表司改會認定任何人有罪或有過失。</li>
+              <li>相關新聞連結到外部網站，內容由各媒體負責，連結可能失效或內容被修改。</li>
+              <li>年度結果是參與者自願圈選的統計，不是具代表性的抽樣民調，不能推論為全體民眾的意見。</li>
+              <li>內容如有錯誤或需要更正，歡迎透過司改會官網與我們聯絡，我們會儘快查證處理。</li>
             </ol></div>
         </div>
         <div class="support"><h3>一起讓司法更值得信賴</h3>

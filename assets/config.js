@@ -1,6 +1,5 @@
 /* =========================================================
    網站設定：上線前只需要改這個檔案
-   Google 表單的三個值可以用 setup.html（表單嫁接小幫手）自動產生
    ========================================================= */
 window.JRF_CONFIG = {
   year: 2026,                              // 目前回顧的年度（對應 data/events.js 裡的年度）
@@ -10,10 +9,10 @@ window.JRF_CONFIG = {
   siteUrl: "https://vote.jrf.org.tw/",     // 正式網址（分享圖卡會印出）
   devPreview: false,                       // true＝設計預覽模式（顯示圖片預留文字、示意連結），正式上線請保持 false
 
-  /* 送出設定：網站把圈選送到 Cloudflare Worker，Worker 驗證後才寫入 Google 表單。
-     Google 表單網址存在 Worker 的密鑰裡，不放在這裡。設定方式見 docs/部署說明.md */
-  submit: {
-    url: "",              // Worker 的送出網址，例如 https://jrf-vote-submit.<帳號>.workers.dev/submit
-    turnstileSiteKey: ""  // Cloudflare Turnstile 的 site key（公開值，可以放在網站上）
+  /* Google 表單：網站把圈選預先填入表單，民眾登入 Google 帳號後在表單頁送出（每個帳號限填一次）。
+     設定方式見 docs/部署說明.md */
+  googleForm: {
+    viewUrl: "",     // 表單網址，結尾是 /viewform，例如 https://docs.google.com/forms/d/e/1FAIpQLS…/viewform
+    picksEntry: ""   // 「圈選事件」題的代號，例如 entry.123456789
   }
 };

@@ -420,7 +420,3 @@ dialog{max-width:760px}
   .ev.repeat.noimg{grid-template-columns:1fr 72px}
   .ev.repeat.noimg .ev-body{padding-left:12px}
 }
-
-/* 送出前的人機驗證 */
-.ts-box{margin:0 0 16px}
-.ts-box:empty{display:none}
