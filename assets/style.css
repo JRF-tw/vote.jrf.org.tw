@@ -274,6 +274,10 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
   .topics{grid-template-columns:repeat(3,1fr)}
   .figures{grid-template-columns:1fr 1fr}
   .explain dl{grid-template-columns:1fr}
+  .month{grid-template-columns:1fr;gap:12px}
+  .month::before{display:none}
+  .month-label{position:static;text-align:left;display:flex;align-items:baseline;gap:8px}
+  .ev{grid-template-columns:200px 1fr 96px}
 }
 @media (max-width:720px){
   body{font-size:16px}
@@ -282,11 +286,10 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
   .compare{grid-template-columns:1fr}
   .ev{grid-template-columns:1fr 82px}
   .ev-body{padding:18px 16px}
-  .month{grid-template-columns:1fr;gap:12px}
-  .month::before{display:none}
-  .month-label{position:static;text-align:left;display:flex;align-items:baseline;gap:8px}
   .figures{grid-template-columns:1fr 1fr}
+  .fig b{font-size:34px;white-space:nowrap}
   .topics{grid-template-columns:1fr 1fr}
+  .nav{padding-right:28px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent)}
   .ev-pick .ring,.ev-pick .stamp-svg{width:54px;height:54px}
   .brand small{display:none}
   .brand span{display:none}
@@ -406,3 +409,18 @@ dialog{max-width:760px}
 .pic-empty .stamp-svg{width:44px;height:44px;opacity:.25;transform:rotate(-8deg)}
 .door{font:inherit;color:inherit;cursor:pointer;width:100%}
 .year-tab{cursor:pointer}
+
+/* 沒有圖片的事件卡：只留內文與圈選欄 */
+.ev.noimg,.ev.repeat.noimg{grid-template-columns:1fr 104px;grid-template-areas:"body pick"}
+.ev.noimg .ev-body{padding-left:22px}
+.ev.repeat.noimg .ev-body{padding-left:18px}
+@media (max-width:720px){
+  .ev.noimg{grid-template-columns:1fr 82px}
+  .ev.noimg .ev-body{padding-left:16px}
+  .ev.repeat.noimg{grid-template-columns:1fr 72px}
+  .ev.repeat.noimg .ev-body{padding-left:12px}
+}
+
+/* 送出前的人機驗證 */
+.ts-box{margin:0 0 16px}
+.ts-box:empty{display:none}

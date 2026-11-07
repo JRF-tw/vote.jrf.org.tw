@@ -7,12 +7,13 @@ window.JRF_CONFIG = {
   maxPicks: 5,                             // 每人最多送出幾件
   deadline: "2026-12-31T23:59:59+08:00",   // 圈選截止時間（過了就不能再送出）
   announce: "2027 年 1 月",                 // 年度結果公布時間（顯示用文字）
-  siteUrl: "",                             // 正式網址，例如 https://jrf-tw.github.io/judicial-review-2026/（分享圖卡會印出）
+  siteUrl: "https://vote.jrf.org.tw/",     // 正式網址（分享圖卡會印出）
   devPreview: false,                       // true＝設計預覽模式（顯示圖片預留文字、示意連結），正式上線請保持 false
 
-  googleForm: {
-    action: "https://docs.google.com/forms/d/e/1FAIpQLSeVv0Y7YC5aEJspfj3qvzWYJ5Fek9Gy0tY9iY7eAhucEhg9Ig/formResponse",
-    picksEntry: "entry.1333646016",
-    personaEntry: ""
+  /* 送出設定：網站把圈選送到 Cloudflare Worker，Worker 驗證後才寫入 Google 表單。
+     Google 表單網址存在 Worker 的密鑰裡，不放在這裡。設定方式見 docs/部署說明.md */
+  submit: {
+    url: "",              // Worker 的送出網址，例如 https://jrf-vote-submit.<帳號>.workers.dev/submit
+    turnstileSiteKey: ""  // Cloudflare Turnstile 的 site key（公開值，可以放在網站上）
   }
 };

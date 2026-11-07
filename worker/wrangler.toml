@@ -1,0 +1,16 @@
+# 年度司法大事記：圈選送出服務（Cloudflare Worker）
+# 部署方式見 docs/部署說明.md「第二部分：送出服務」
+name = "jrf-vote-submit"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://vote.jrf.org.tw"   # 允許送出的網站來源，多個用逗號分隔
+EVENT_COUNT = "22"                              # 本年度事件數（代碼 01 到此數字）
+MAX_PICKS = "5"                                 # 每人最多圈幾件
+DEADLINE = "2026-12-31T23:59:59+08:00"          # 圈選截止時間，過了一律拒收
+
+# 下列三個是密鑰，不寫在這裡，用指令設定：
+#   npx wrangler secret put TURNSTILE_SECRET   Cloudflare Turnstile 的 secret key
+#   npx wrangler secret put FORM_ACTION        Google 表單送出網址（…/formResponse）
+#   npx wrangler secret put PICKS_ENTRY        「圈選事件」題的代號（entry.數字）

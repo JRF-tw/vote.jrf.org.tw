@@ -37,6 +37,7 @@
   };
   const KEY = "jrf-review-" + YEAR;
   let st = store.get(KEY) || { picks: [], sent: false, at: 0 };
+  st.picks = (st.picks || []).filter(c => byCode[c]);   // 事件代碼若被改動，丟掉瀏覽器裡已不存在的舊代碼，避免頁面壞掉
   const save = () => store.set(KEY, st);
   const fmtDate = t => { const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
 
@@ -58,13 +59,16 @@
   const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度結果"], ["archive", "歷年回顧"], ["polls", "司法民調"], ["about", "關於"]];
   const pageFromHash = () => (location.hash.slice(1) || "home").split("?")[0];
   function go(page, params, fromHistory) {
-    PAGE = PAGES[page] ? page : "home";
+    PAGE = Object.hasOwn(PAGES, page) ? page : "home";
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
     if ($("#dlg").open) $("#dlg").close();
     document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === PAGE));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
+    // 手機版選單可橫向捲動：把目前頁面的按鈕捲進畫面
+    const cur = $(".nav [aria-current]"), nav = $(".nav");
+    if (cur) nav.scrollLeft += cur.getBoundingClientRect().left - nav.getBoundingClientRect().left - (nav.clientWidth - cur.offsetWidth) / 2;
     $("#tray").classList.add("hide");
     PAGES[PAGE]();
     window.scrollTo(0, 0);
@@ -126,6 +130,9 @@
   /* 圖片：沒有圖時顯示預留框 */
   const picHTML = e => e.image ? `<img class="pic" src="${esc(e.image)}" alt="" loading="lazy">`
     : DEV ? `<span class="pic-ph"><span><b>🖼</b>圖片預留<br>建議 3:2</span></span>` : `<span class="pic-ph pic-empty">${STAMP()}</span>`;
+  /* 正式版沒有圖片時，不顯示圖片區塊 */
+  const hasPic = e => !!e.image || DEV;
+  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>` : "";
   const mediaStyle = m => { const c = MEDIA[m] || ["#ECEEF2", "#4A5168"]; return `background:${c[0]};color:${c[1]}`; };
   const newsUrl = n => n.url || `https://www.google.com/search?q=${encodeURIComponent(n.media + " " + n.title)}`;
 
@@ -137,7 +144,7 @@
     openDialog(`
       <div class="d-meta"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${dateOf(e)}</span></div>
       <h2 class="d-title">${esc(e.title)}</h2>
-      <div class="d-pic">${picHTML(e)}</div>
+      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}</div>` : ""}
       <h3 class="d-sec">事件回顧</h3>
       <div class="full">${e.full ? paras(e.full) : paras(e.summary) + (DEV ? `<p class="draft-note" style="text-indent:0">詳細版撰寫中，目前先顯示簡短版。</p>` : "")}</div>
       <h3 class="d-sec">時間軸</h3>
@@ -254,16 +261,17 @@
           const pick = `<button class="ev-pick" data-pick="${e.code}" aria-pressed="${on}" ${locked ? "disabled" : ""} aria-label="${on ? "取消圈選" : "圈選"}：${esc(e.title)}">
               <span class="ring">${STAMP()}</span>${locked ? (on ? "我圈的" : "") : (on ? "已圈" : "圈選")}
             </button>`;
-          if (repeat) return `<article class="ev repeat ${on ? "picked" : ""}">
-            <button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>
+          const cls = `${on ? "picked" : ""} ${hasPic(e) ? "" : "noimg"}`;
+          if (repeat) return `<article class="ev repeat ${cls}">
+            ${imgBtn(e)}
             <div class="ev-body">
               <div class="ev-top"><span class="ev-code">${e.code}</span><span>${fmtD(n.date)}</span></div>
               <h3><button class="more" style="text-decoration:none;font:inherit" data-open="${e.code}">${esc(e.title)}</button></h3>
             </div>${pick}
           </article>`;
           const others = keyNews(e).filter(k => k !== n).map(k => monthLabel(k.date));
-          return `<article class="ev ${on ? "picked" : ""}">
-            <button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>
+          return `<article class="ev ${cls}">
+            ${imgBtn(e)}
             <div class="ev-body">
               <div class="ev-top"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">同一事件也出現在 ${others.join("、")}</span>` : ""}</div>
               <h3>${esc(e.title)}</h3>
@@ -320,29 +328,53 @@
       <h2>這是你心中的 ${YEAR} 司法大事</h2>
       <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span>${esc(byCode[c].title)}<small>${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
       <p class="draft-note">送出後就不能修改。你的選擇會和其他人一起統計，在 ${C.announce} 和司改會的評選一起公布。</p>
+      <div class="ts-box" id="tsBox"></div>
       <div class="dlg-actions">
-        <button class="btn btn-primary" id="doSend">送出我的清單</button>
+        <button class="btn btn-primary" id="doSend" ${S.url && S.turnstileSiteKey ? "disabled" : ""}>送出我的清單</button>
         <button class="btn btn-ghost" id="dlgBack">再看看</button>
       </div>`);
     $("#dlgBack").onclick = () => $("#dlg").close();
     $("#doSend").onclick = sendList;
+    renderTurnstile();
+  }
+
+  /* ---------- 送出：Cloudflare Turnstile 人機驗證 → Worker → Google 表單 ---------- */
+  const S = C.submit || {};
+  let tsId = null, tsToken = "";
+  async function renderTurnstile() {
+    tsToken = "";
+    if (!S.url || !S.turnstileSiteKey) return;
+    for (let i = 0; i < 50 && !window.turnstile; i++) await new Promise(r => setTimeout(r, 100));   // 等驗證元件載入，最多 5 秒
+    const box = $("#tsBox");
+    if (!box) return;
+    if (!window.turnstile) { box.innerHTML = `<p class="draft-note">人機驗證載入失敗，請確認網路連線，或關閉廣告阻擋外掛後重新整理。</p>`; return; }
+    try { if (tsId !== null) window.turnstile.remove(tsId); } catch (e) { }
+    const btn = () => $("#doSend");
+    tsId = window.turnstile.render(box, {
+      sitekey: S.turnstileSiteKey, language: "zh-tw",
+      size: box.clientWidth < 300 ? "compact" : "normal",   // 標準版固定 300px 寬，窄螢幕改用精簡版
+      callback: t => { tsToken = t; if (btn()) btn().disabled = false; },
+      "expired-callback": () => { tsToken = ""; if (btn()) btn().disabled = true; },
+      "error-callback": () => { tsToken = ""; if (btn()) btn().disabled = true; }
+    });
   }
 
   async function sendList() {
     const btn = $("#doSend"); btn.disabled = true; btn.textContent = "送出中…";
-    const f = C.googleForm;
     try {
-      if (f.action && f.picksEntry) {
-        const body = new URLSearchParams();
-        st.picks.forEach(c => body.append(f.picksEntry, c));
-        if (f.personaEntry) body.append(f.personaEntry, personaOf(st.picks).name);
-        await fetch(f.action, { method: "POST", mode: "no-cors", body });
-      }
+      if (S.url) {
+        const r = await fetch(S.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks: st.picks, token: tsToken }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.ok) throw new Error(j.error || "http_" + r.status);
+      } else if (!DEV) throw new Error("not_configured");   // 設計預覽模式可以不設定送出網址
       st.sent = true; st.at = Date.now(); save();
       go("result"); toast("已送出，謝謝你一起回顧這一年！");
     } catch (e) {
-      btn.disabled = false; btn.textContent = "送出我的清單";
-      toast("送出失敗，請確認網路連線後再試一次");
+      btn.textContent = "送出我的清單";
+      const msg = { captcha: "人機驗證沒有通過，請再驗證一次", closed: "圈選已經截止，謝謝你的參與", not_configured: "送出功能尚未設定完成，請稍後再試" }[e.message];
+      toast(msg || "送出失敗，請確認網路連線後再試一次");
+      if (S.turnstileSiteKey && window.turnstile && tsId !== null) { tsToken = ""; window.turnstile.reset(tsId); }   // token 只能用一次，失敗後要重新驗證
+      else btn.disabled = false;
     }
   }
 
@@ -591,6 +623,7 @@
               <li>每人最多圈 ${C.maxPicks} 件事件，可以少於 ${C.maxPicks} 件。</li>
               <li>送出清單後無法修改，同一個瀏覽器只能送出一次。</li>
               <li>不需要登入，也不會蒐集姓名、電子郵件等個人資料，只記錄你圈的事件與送出時間。</li>
+              <li>送出前會經過 Cloudflare Turnstile 人機驗證，用來阻擋程式自動灌票。圈選結果存放在司改會的 Google 表單，只有司改會同仁能查看。網頁字型由 Google Fonts 提供。</li>
               <li>年度結果代表參與者的關注，不是對案件或當事人的評價，也不是具代表性的抽樣民調。</li>
               <li>圈選到 ${fmtDate(DEADLINE)} 截止，結果在 ${C.announce} 公布。</li>
             </ol></div>
