@@ -63,6 +63,8 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
+    const navName = (NAV.find(n => n[0] === PAGE) || [])[1];
+    document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
     document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === PAGE));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
@@ -94,7 +96,7 @@
         <a class="brand" href="#" data-go="home" aria-label="回首頁">
           ${STAMP()}<span>年度司法大事記<small>民間司法改革基金會</small></span>
         </a>
-        <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#" data-go="${k}">${t}</a>`).join("")}</nav>
+        <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#${k}" data-go="${k}">${t}</a>`).join("")}</nav>
       </div></header>
       <main id="main"></main>`);
     document.body.insertAdjacentHTML("beforeend", `
