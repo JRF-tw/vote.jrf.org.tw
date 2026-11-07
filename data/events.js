@@ -71,7 +71,7 @@ window.JRF_DATA = {
       {code:"04", tag:"人權保障", period:"3月",
        title:"人權會揭司法通譯制度結構性問題，籲建立國家級通譯服務",
        summary:"為協助不熟悉中文的外籍人士、移工、原住民族及其他語言弱勢者，司法程序中設有通譯協助。\n但於2026年3月底，國家人權委員會發布專案報告，指出現行司法通譯制度存在結構性問題(翻譯品質也缺乏有效檢核機制、通譯報酬偏低且標準不一、人力及預算不足)，呼籲政府建立國家級通譯服務機制並推動制度改革。",
-       full:"", image:"",
+       full:"", image:"images/2026-04.jpg", imageSource:["今周刊","https://www.businesstoday.com.tw/article/category/183027/post/202604300033/"],
        news:[
          {date:"2026/03/31", media:"國家人權委員會", title:"人權會發布《司法通譯與指定辯護制度》專案報告　籲請政府強化制度整合與資源投入", url:"https://nhrc.cy.gov.tw/News_Content.aspx?n=7479&s=7693"}
        ]},
@@ -131,7 +131,7 @@ window.JRF_DATA = {
       {code:"11", tag:"制度運作", period:"4月",
        title:"司法機關導入生成式AI，司法院訂定使用指引",
        summary:"司法院於4月22日函頒所屬機關使用AI系統參考指引，要求AI僅限於協助法官進行資料檢索、摘要分析及輔助作業流程優化；至於證據價值之判斷、事實認定、法律適用或量刑等核心工作，仍須由法官親自為之。",
-       full:"", image:"",
+       full:"", image:"images/2026-11.jpg", imageSource:["CTWANT","https://www.ctwant.com/article/500372/"],
        news:[
          {date:"2026/06/05", media:"司法院", title:"司法院函頒司法院及所屬各機關使用人工智慧系統參考指引", url:"https://www.judicial.gov.tw/tw/cp-1454-1559552-524e3-1.html", key:true}
        ]},
