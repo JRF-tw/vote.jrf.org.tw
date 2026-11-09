@@ -63,10 +63,10 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
-    const navName = PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : (NAV.find(n => n[0] === PAGE) || [])[1];
+    const navName = PAGE === "judicial-yuan-survey" ? "司法院一般民眾對司法認知調查" : PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : (NAV.find(n => n[0] === PAGE) || [])[1];
     document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
-    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey"].includes(PAGE) ? "polls" : PAGE)));
+    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls" : PAGE)));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
     // 手機版選單可橫向捲動：把目前頁面的按鈕捲進畫面
     const cur = $(".nav [aria-current]"), nav = $(".nav");
@@ -604,9 +604,11 @@
         <p class="sec-sub">各項調查依主辦單位與題目分別呈現；比較前請留意調查方法及年度。</p>
         <article class="card ccu-entry"><div><h3>臺灣民眾對司法與犯罪防制滿意度調查（2018-2025）</h3><p>國立中正大學犯罪研究中心及犯罪防治學系</p><a class="btn btn-ghost btn-small" href="#ccu-survey" data-go="ccu-survey">查看完整調查結果 →</a></div>${window.JRF_CCU_PAGE.preview()}</article>
         <article class="card ccu-entry gvm-entry"><div><h3>遠見臺灣社會信任調查</h3><p>歷年法官、警察信任度，以及民眾對司法能否維護公平正義的評價。</p><a class="btn btn-ghost btn-small" href="#gvm-survey" data-go="gvm-survey">查看完整調查結果 →</a></div>${window.JRF_GVM_PAGE.preview()}</article>
+        <article class="card ccu-entry judicial-yuan-entry"><div><h3>司法院一般民眾對司法認知調查（105–114年）</h3><p>司法院｜法律觀念、司法信任與法院經驗等12項調查結果。</p><a class="btn btn-ghost btn-small" href="#judicial-yuan-survey" data-go="judicial-yuan-survey">查看完整調查結果 →</a></div>${window.JRF_JUDICIAL_PAGE.preview()}</article>
         <div class="poll-grid">${trends}</div></div></section>`);
     window.JRF_CCU_PAGE.bind($("#main"));
     window.JRF_GVM_PAGE.bind($("#main"));
+    window.JRF_JUDICIAL_PAGE.bind($("#main"));
   }
 
   function pageCcuSurvey() {
@@ -617,6 +619,11 @@
   function pageGvmSurvey() {
     main(window.JRF_GVM_PAGE.render());
     window.JRF_GVM_PAGE.bind($("#main"));
+  }
+
+  function pageJudicialYuanSurvey() {
+    main(window.JRF_JUDICIAL_PAGE.render());
+    window.JRF_JUDICIAL_PAGE.bind($("#main"));
   }
 
   /* ===================== 關於 ===================== */
@@ -650,7 +657,7 @@
       </div></section>`);
   }
 
-  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, about: pageAbout };
+  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
   go(pageFromHash(), {}, true);

@@ -518,3 +518,15 @@ dialog{max-width:760px}
 }
 
 .gvm-trust-card .ccu-safety-plot,.gvm-entry .ccu-safety-plot{position:relative}
+
+/* 司法院調查沿用共用圖卡；提示列出原報告正、負向合計。 */
+.judicial-audience{margin-top:28px}
+body[data-page="judicial-yuan-survey"] .ccu-safety-plot,.judicial-yuan-entry .ccu-safety-plot{position:relative}
+body[data-page="judicial-yuan-survey"] .gvm-tooltip,.judicial-yuan-entry .gvm-tooltip{white-space:pre;line-height:1.6;text-align:left}
+body[data-page="judicial-yuan-survey"] .safety-label-layer,.judicial-yuan-entry .safety-label-layer{pointer-events:none}
+/* 僅司法院原始回答提示：六個選項及樣本數；避免高浮層被繪圖容器裁切。 */
+body[data-page="judicial-yuan-survey"] .ccu-safety-plot,.judicial-yuan-entry .ccu-safety-plot{overflow:visible}
+body[data-page="judicial-yuan-survey"] .gvm-tooltip,.judicial-yuan-entry .gvm-tooltip{z-index:5;width:max-content;white-space:normal}
+.judicial-tooltip-distribution{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:2px 16px;margin:6px 0 0}
+.judicial-tooltip-distribution dt,.judicial-tooltip-distribution dd{margin:0;white-space:nowrap}
+.judicial-tooltip-distribution dd{text-align:right;font-variant-numeric:tabular-nums}

@@ -31,7 +31,9 @@
 | `data/polls.js` | 其他司法民調資料 |
 | `data/ccu-survey.js` | 中正大學107–114年度六項調查數據、訪問資訊與來源 |
 | `assets/ccu-survey.js` | 中正大學調查專頁與預覽 |
-| `assets/survey-charts.js` | 中正與遠見調查共用的圖卡、折線與標籤避讓 |
+| `assets/survey-charts.js` | 調查共用圖卡、折線、標籤避讓與問法斷線 |
+| `data/judicial-yuan-survey.js` | 司法院105–114年12項正、負向比率與問法斷點 |
+| `assets/judicial-yuan-survey.js` | 司法院調查詳情（`/#judicial-yuan-survey`）、受訪資格說明與提示互動 |
 | `data/gvm-survey.js` | 遠見社會信任調查數據與各筆來源 |
 | `assets/gvm-survey.js` | 司法民調中的遠見調查詳情（`/#gvm-survey`）、法官信任度預覽與提示互動 |
 | `images/` | 事件圖片與社群分享縮圖 |
@@ -48,3 +50,5 @@
 檢查：`node --test tests/*.test.cjs`。
 
 遠見調查維護：調查不固定每年辦理，缺年不補0；2006–2017年採2017年版警政工作年報，2021年僅收已確認的法官信任度。2024年方法不可套用其他年度。各筆資料的 `sourceId` 對應同檔來源。
+
+司法院調查維護：使用報告公布的加權後正、負向合計，不以100減正向比例推算負向。第一組僅109–114年；`punish` 的110年前、`independent` 的109／111／113年前依問法斷線；`null` 不繪製資料點、不跨缺值連線。

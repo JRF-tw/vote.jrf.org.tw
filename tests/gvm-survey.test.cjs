@@ -123,5 +123,5 @@ test('shared card format, headings and judge preview integrate under judicial po
   const nav = app.match(/const NAV = (.*);/)[1];
   assert.ok(!nav.includes('gvm-survey'));
   assert.ok(app.includes('window.JRF_GVM_PAGE.preview()'));
-  assert.ok(app.includes('["ccu-survey", "gvm-survey"].includes(PAGE) ? "polls"'));
+  assert.ok(app.includes('["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls"'));
 });
