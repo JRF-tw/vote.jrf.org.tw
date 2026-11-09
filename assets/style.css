@@ -424,3 +424,79 @@ dialog{max-width:760px}
   .ev.repeat.noimg{grid-template-columns:1fr 72px}
   .ev.repeat.noimg .ev-body{padding-left:12px}
 }
+
+/* ===== 中正大學歷年調查專頁 ===== */
+.ccu-title{margin-top:18px;max-width:19em}
+.ccu-section{padding:20px 0 28px;scroll-margin-top:90px}
+.ccu-entry{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
+.ccu-entry>div{min-width:0}
+.ccu-preview h4{font-size:16px;margin:0 0 10px}
+.ccu-chart{width:100%;height:auto;display:block;overflow:hidden}
+.ccu-source-method{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;scroll-margin-top:90px}
+.ccu-chart text{fill:var(--muted);font-size:11px;font-family:var(--font-body)}
+.ccu-chart .ccu-value{fill:var(--ink);font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.ccu-entry h3{margin-top:0}
+.ccu-poll{min-width:0;border-top:4px solid var(--chart-color)}
+.ccu-poll h3,.ccu-preview h4{color:var(--chart-color)}
+.ccu-latest{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:16px 0 18px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.5}
+.ccu-latest strong{font-size:22px;font-weight:700;white-space:nowrap}
+.ccu-latest span{font-size:16px;font-weight:500}
+.ccu-latest .ccu-latest-note{font-size:14px}
+.ccu-poll .ccu-chart{overflow:hidden;display:block}
+.ccu-point{cursor:pointer;outline:none;touch-action:manipulation}
+.ccu-point[aria-pressed="true"] .ccu-dot{stroke:var(--ink);stroke-width:3}
+.ccu-point:focus-visible .ccu-dot{stroke:var(--ink);stroke-width:4;r:8}
+.ccu-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ccu-table{width:100%;border-collapse:collapse;font-size:14px;text-align:left}
+.ccu-table caption{text-align:left;padding:12px 0;font-weight:700}
+.ccu-table th,.ccu-table td{border-bottom:1px solid var(--line);padding:10px 12px;vertical-align:top}
+.ccu-table thead{background:var(--surface-2)}
+.ccu-table th[scope="row"]{white-space:nowrap}
+.ccu-notice{padding:16px;border-left:4px solid var(--jrf);background:var(--surface-2);scroll-margin-top:90px;margin-top:20px!important}
+.ccu-source-list{padding-left:1.4em}
+.ccu-source-list li{margin-bottom:10px;overflow-wrap:anywhere}
+@media(max-width:720px){
+  .ccu-entry{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+  .ccu-poll{padding:16px}
+  .ccu-chart text{font-size:14px}
+  .ccu-section .card{padding:20px}
+}
+
+.ccu-legend{list-style:none;padding:0;margin:16px 0;font-size:13px}
+.ccu-legend li{display:flex;align-items:baseline;gap:8px;margin:6px 0}
+.poll .ccu-legend svg{width:30px;height:12px;flex:none;margin:0}
+
+/* 六項調查共用圖卡。 */
+.poll.ccu-safety{
+  --safety-accent:#2F5BD3;--safety-ink:#1B2433;--safety-muted:#5B6577;
+  --safety-grid:#E6E9EF;
+  width:100%;min-width:0;
+  padding:24px;border:1px solid #E3E7EE;border-top:4px solid var(--safety-accent);border-radius:20px;background:#fff;
+  display:flex;flex-direction:column;gap:12px;color:var(--safety-ink);
+  font-family:Inter,'Noto Sans TC',system-ui,sans-serif;font-variant-numeric:tabular-nums;
+}
+.ccu-safety h2{margin:0;font-size:20px;font-weight:700;line-height:1.4;color:var(--safety-accent)}
+.ccu-safety-headline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:20px}
+.ccu-safety-number{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--safety-accent)}
+.ccu-safety-number>span{font-size:24px;font-weight:600;margin-left:2px}
+.ccu-safety-context{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:4px;font-size:14px;line-height:1.5;color:var(--safety-muted)}
+.ccu-safety-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:#FDF1E7;color:#A84A0C;font-size:13px;font-weight:600;white-space:nowrap}
+.ccu-safety-chip svg{width:12px;height:12px;margin:0;flex:none}
+.ccu-safety-plot{margin-top:0;overflow-x:auto;width:100%}
+.ccu-safety-chart{display:block;width:100%;min-width:0;height:auto;margin:0;overflow:hidden}
+.ccu-safety-chart text{font-family:inherit;fill:var(--safety-muted);font-size:12px;font-weight:400}
+.ccu-safety-chart .safety-label-latest{font-size:14px;font-weight:700;fill:var(--safety-accent)}
+.ccu-safety-chart .safety-year-latest{font-size:18px;font-weight:700;fill:var(--safety-accent)}
+@media(max-width:720px){
+  .poll.ccu-safety{padding:24px;min-height:0}
+}
+
+.ccu-safety-year{font-size:21px;color:var(--safety-accent)}
+
+.ccu-safety .ccu-legend{margin:0;font-size:12px}
+.ccu-preview .ccu-safety-chart{margin:0}
+
+/* 最後繪製標籤，白色描邊保護字形，避免格線或其他序列穿過數字。 */
+.ccu-safety-chart .safety-label{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
