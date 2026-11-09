@@ -500,3 +500,21 @@ dialog{max-width:760px}
 
 /* 最後繪製標籤，白色描邊保護字形，避免格線或其他序列穿過數字。 */
 .ccu-safety-chart .safety-label{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+
+/* 遠見臺灣社會信任調查；樣式限於新頁元件。 */
+.gvm-chart-wrap{position:relative;min-width:0;width:100%}
+.gvm-point{cursor:pointer;touch-action:manipulation}
+.gvm-point:focus-visible{outline:none}
+.gvm-point:focus-visible .gvm-dot,.gvm-point:hover .gvm-dot{stroke:var(--safety-ink);stroke-width:3px;r:6px}
+.gvm-tooltip{position:absolute;transform:translateX(-50%);max-width:100%;padding:5px 9px;background:var(--ink);color:#fff;border-radius:8px;pointer-events:none;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 2px 8px #1b255922}
+.gvm-tooltip[hidden]{display:none}
+.gvm-data-note{border-left:3px solid var(--jrf);padding:12px 18px;margin:0;background:var(--surface-2);border-radius:0 12px 12px 0}
+.gvm-source-note{font-size:14px;color:var(--muted);margin:4px 0 16px}
+.gvm-entry{margin-bottom:22px}
+.gvm-entry h3{margin-top:0}
+@media(max-width:480px){
+  .poll.gvm-trust-card{padding:16px}
+  .gvm-chart .safety-axis{font-size:16px}
+}
+
+.gvm-trust-card .ccu-safety-plot,.gvm-entry .ccu-safety-plot{position:relative}

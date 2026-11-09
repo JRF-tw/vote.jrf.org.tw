@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const context = vm.createContext({ window: {} });
-for (const file of ['data/ccu-survey.js', 'assets/ccu-survey.js']) {
+for (const file of ['data/ccu-survey.js', 'assets/survey-charts.js', 'assets/ccu-survey.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
 }
 const data = context.window.JRF_CCU_SURVEY;
@@ -43,7 +43,7 @@ test('all six cards share the latest format and retain source links', () => {
   assert.ok(!html.includes('ccu-latest'));
   assert.ok(!html.includes('ccu-readout'));
   assert.ok(!html.includes('<details>'));
-  assert.ok(html.indexOf('資料解讀注意事項') < html.indexOf('六項指標的歷年變化'));
+  assert.ok(html.indexOf('資料解讀注意事項') < html.indexOf('歷年調查結果'));
   rendered.forEach((card,i) => {
     const key = keys[i];
     assert.ok(card.includes(`data-metric="${key}"`));

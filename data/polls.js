@@ -28,47 +28,6 @@ window.JRF_POLLS = {
         ["司法院：113 年一般民眾對司法認知調查報告","https://srda.sinica.edu.tw/file/15c0c1c3-4c1d-4338-bd8a-f44a3df2569e"],
         ["司法院統計處：歷年調查報告下載","https://www.judicial.gov.tw/tw/lp-1262-1.html"]
       ]
-    },
-    {
-      org: "台灣民意基金會",
-      title: "對總統「司法改革」表現的滿意度",
-      survey: "每月例行全國性民調（電訪，約 1,070 份樣本，20 歲以上）",
-      question: "滿意總統就任後「司法改革」表現的比例",
-      color: "var(--mint)",
-      points: [["2017/5",34.7],["2023",37.4],["2025/5",40.0]],
-      note: "2017 年為蔡英文總統就任首年、2025 年為賴清德總統就任首年。",
-      sources: [
-        ["台灣民意基金會：2025 年 5 月民調報告","https://www.tpof.org/wp-content/uploads/2025/05/TPOF-5%E6%9C%88%E6%B0%91%E8%AA%BF%E5%A0%B1%E5%91%8AV2.pdf"],
-        ["司法院：回應台灣民意基金會司法改革民調","https://www.judicial.gov.tw/tw/cp-1887-644558-48c7f-1.html"]
-      ]
-    },
-    {
-      org: "台灣民意基金會",
-      title: "對台灣司法有沒有信心",
-      survey: "每月例行全國性民調（電訪，約 1,070 份樣本，20 歲以上）",
-      question: "對台灣司法有信心的比例（非常有信心＋還算有信心）",
-      color: "var(--mint)",
-      points: [["2024/9",44.2],["2025/1",44.8]],
-      note: "2025 年 1 月調查中，沒信心的比例為 49.2%，仍略高於有信心。",
-      sources: [
-        ["台灣民意基金會：2025 年 1 月民調報告","https://www.tpof.org/wp-content/uploads/2025/01/TPOF-1%E6%9C%88%E6%B0%91%E8%AA%BF%E5%A0%B1%E5%91%8A.pdf"]
-      ]
     }
-  ],
-
-  /* 近期單次調查：有信心／沒信心對照 */
-  snapshots: [
-    {org:"台灣議題研究中心", date:"2026/9", title:"對政府「維持司法公正與獨立」有沒有信心",
-     yes:39.5, no:54.0, yesLabel:"有信心", noLabel:"沒信心",
-     source:["Yahoo 新聞：黎榮章觀點","https://tw.news.yahoo.com/%E9%BB%8E%E6%A6%AE%E7%AB%A0%E8%A7%80%E9%BB%9E-%E7%82%BA%E4%BD%95%E9%81%8E%E5%8D%8A%E6%B0%91%E7%9C%BE%E5%B0%8D%E6%94%BF%E5%BA%9C%E7%B6%AD%E6%8C%81%E5%8F%B8%E6%B3%95%E5%85%AC%E6%AD%A3%E6%B2%92%E6%9C%89%E4%BF%A1%E5%BF%83-220000870.html"]},
-    {org:"美麗島電子報", date:"2025/12", title:"相信大法官能超越黨派、獨立行使職權",
-     yes:24.7, no:59.9, yesLabel:"相信", noLabel:"不相信",
-     source:["Yahoo 新聞：大法官能超越黨派獨立行使職權嗎？","https://tw.news.yahoo.com/%E5%A4%A7%E6%B3%95%E5%AE%98%E8%83%BD%E8%B6%85%E8%B6%8A%E9%BB%A8%E6%B4%BE%E7%8D%A8%E7%AB%8B%E8%A1%8C%E4%BD%BF%E8%81%B7%E6%AC%8A%E5%97%8E-%E6%9C%80%E6%96%B0%E6%B0%91%E8%AA%BF%E5%87%BA%E7%88%90%E8%BF%916%E6%88%90%E6%B0%91%E7%9C%BE%E4%B8%8D%E7%9B%B8%E4%BF%A1-115313801.html"]},
-    {org:"台灣民意基金會", date:"2025/1", title:"對台灣司法有沒有信心",
-     yes:44.8, no:49.2, yesLabel:"有信心", noLabel:"沒信心",
-     source:["台灣民意基金會：2025 年 1 月民調報告","https://www.tpof.org/wp-content/uploads/2025/01/TPOF-1%E6%9C%88%E6%B0%91%E8%AA%BF%E5%A0%B1%E5%91%8A.pdf"]},
-    {org:"司法院", date:"2022/6", title:"認同「國民法官制度讓台灣司法更好」",
-     yes:82.2, no:13.7, yesLabel:"認同", noLabel:"不認同",
-     source:["司法院國民法官專區：制度認知調查","https://www.judicial.gov.tw/tw/cp-2368-685221-7c989-5.html"]}
   ]
 };

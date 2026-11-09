@@ -63,10 +63,10 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
-    const navName = PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : (NAV.find(n => n[0] === PAGE) || [])[1];
+    const navName = PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : (NAV.find(n => n[0] === PAGE) || [])[1];
     document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
-    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (PAGE === "ccu-survey" ? "polls" : PAGE)));
+    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey"].includes(PAGE) ? "polls" : PAGE)));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
     // 手機版選單可橫向捲動：把目前頁面的按鈕捲進畫面
     const cur = $(".nav [aria-current]"), nav = $(".nav");
@@ -597,26 +597,26 @@
         ${lineChart(t.points, t.color)}
         <p class="meta">${t.survey}<br>${t.note}<br>資料來源：${t.sources.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a>`).join("、")}</p></article>`;
     }).join("");
-    const snaps = P.snapshots.map(s => `<article class="poll"><h3>${s.title}</h3><p class="q">${s.org}｜${s.date}</p>
-      <div class="split" role="img" aria-label="${s.yesLabel} ${s.yes}%，${s.noLabel} ${s.no}%"><span class="yes" style="width:${s.yes}%"></span><span style="flex:1"></span><span class="no" style="width:${s.no}%"></span></div>
-      <div class="split-legend"><span>${s.yesLabel} <b style="color:var(--mint)">${s.yes}%</b></span><span>${s.noLabel} <b style="color:var(--stamp)">${s.no}%</b></span></div>
-      <p class="meta">資料來源：<a href="${s.source[1]}" target="_blank" rel="noopener">${s.source[0]}</a></p></article>`).join("");
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
-        <p class="page-sub">民眾怎麼看司法？這裡整理了幾項長期調查和近期民調，資料更新至 ${P.updated}。</p></div>
+        <p class="page-sub">民眾怎麼看司法？這裡整理了不同單位的歷年司法民調，資料更新至 ${P.updated}。</p></div>
       <section style="padding-top:24px"><div class="wrap"><p class="explain"><b>不同單位的民調不能直接比較。</b>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，建議比較同一單位歷年數字較準。</p></div></section>
       <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">長期追蹤</h2>
         <p class="sec-sub">各項調查依主辦單位與題目分別呈現；比較前請留意調查方法及年度。</p>
         <article class="card ccu-entry"><div><h3>臺灣民眾對司法與犯罪防制滿意度調查（2018-2025）</h3><p>國立中正大學犯罪研究中心及犯罪防治學系</p><a class="btn btn-ghost btn-small" href="#ccu-survey" data-go="ccu-survey">查看完整調查結果 →</a></div>${window.JRF_CCU_PAGE.preview()}</article>
-        <div class="poll-grid">${trends}</div></div></section>
-      <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">近期調查</h2>
-        <p class="sec-sub">近期的調查中，問到司法能否獨立、不受政黨影響時，負面回答都超過一半：台灣議題研究中心 2026 年 9 月的調查，有 54% 的民眾對政府維持司法公正與獨立沒信心；美麗島電子報 2025 年 12 月的調查，有 59.9% 的民眾不相信大法官能超越黨派。問到對台灣司法整體有沒有信心時，台灣民意基金會 2025 年 1 月的調查中正反兩方接近，有信心 44.8%、沒信心 49.2%。問到國民法官這項具體制度時，評價明顯正面，司法院 2022 年 6 月的調查有 82.2% 的民眾認同這項制度讓台灣司法更好。</p>
-        <div class="poll-grid">${snaps}</div></div></section>`);
+        <article class="card ccu-entry gvm-entry"><div><h3>遠見臺灣社會信任調查</h3><p>歷年法官、警察信任度，以及民眾對司法能否維護公平正義的評價。</p><a class="btn btn-ghost btn-small" href="#gvm-survey" data-go="gvm-survey">查看完整調查結果 →</a></div>${window.JRF_GVM_PAGE.preview()}</article>
+        <div class="poll-grid">${trends}</div></div></section>`);
     window.JRF_CCU_PAGE.bind($("#main"));
+    window.JRF_GVM_PAGE.bind($("#main"));
   }
 
   function pageCcuSurvey() {
     main(window.JRF_CCU_PAGE.render());
     window.JRF_CCU_PAGE.bind($("#main"));
+  }
+
+  function pageGvmSurvey() {
+    main(window.JRF_GVM_PAGE.render());
+    window.JRF_GVM_PAGE.bind($("#main"));
   }
 
   /* ===================== 關於 ===================== */
@@ -650,7 +650,7 @@
       </div></section>`);
   }
 
-  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, about: pageAbout };
+  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
   go(pageFromHash(), {}, true);
