@@ -10,10 +10,11 @@ window.JRF_CONFIG = {
   logo: "images/jrf-logo.png",             // 頁首左側網站 LOGO
   devPreview: false,                       // true＝設計預覽模式（顯示圖片預留文字、示意連結），正式上線請保持 false
 
-  /* Google 表單：網站把圈選預先填入表單，民眾登入 Google 帳號後在表單頁送出（每個帳號限填一次）。
+  /* Google 表單：網站直接傳送圈選與 Email，不需登入或開啟表單頁。
      設定方式見 docs/部署說明.md */
   googleForm: {
-    viewUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeVv0Y7YC5aEJspfj3qvzWYJ5Fek9Gy0tY9iY7eAhucEhg9Ig/viewform",  // 表單網址，結尾是 /viewform，例如 https://docs.google.com/forms/d/e/1FAIpQLS…/viewform
-    picksEntry: "entry.1333646016"  // 「圈選事件」題的代號，例如 entry.123456789
+    action: "https://docs.google.com/forms/d/e/1FAIpQLSeVv0Y7YC5aEJspfj3qvzWYJ5Fek9Gy0tY9iY7eAhucEhg9Ig/formResponse",  // 表單接收網址
+    picksEntry: "entry.1333646016", // 「圈選事件」題的代號
+    emailEntry: "entry.2028008171"  // 第二題「E-mail」簡答題的代號
   }
 };

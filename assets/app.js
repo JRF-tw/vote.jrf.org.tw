@@ -331,43 +331,60 @@
     openDialog(`
       <h2>這是你心中的 ${YEAR} 司法大事</h2>
       <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span>${esc(byCode[c].title)}<small>${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
-      <p class="draft-note">接下來會開啟 Google 表單並勾好這些事件，登入 Google 帳號後按「提交」就完成了。每個帳號只能送出一次，送出後無法修改。</p>
+      <label class="email-field" for="voterEmail">Email</label>
+      <input class="email-input" id="voterEmail" type="text" inputmode="email" autocomplete="email" placeholder="請填寫您的 Email" aria-required="true" aria-describedby="emailHint">
+      <p class="email-hint" id="emailHint">請留下 Email，供司改會核對投票資料。</p>
+      <p class="draft-note">送出後無法修改。你的選擇會在 ${C.announce} 和司改會的評選一起公布。</p>
       <div class="dlg-actions">
-        <button class="btn btn-primary" id="doSend">前往 Google 表單送出</button>
+        <button class="btn btn-primary" id="doSend" disabled>送出我的清單</button>
         <button class="btn btn-ghost" id="dlgBack">再看看</button>
       </div>`);
     $("#dlgBack").onclick = () => $("#dlg").close();
+    $("#voterEmail").oninput = () => { $("#doSend").disabled = sending || !$("#voterEmail").value.trim(); };
     $("#doSend").onclick = sendList;
+    $("#voterEmail").focus();
   }
 
-  /* ---------- 送出：把圈選預先填入 Google 表單，民眾登入 Google 帳號後在表單頁送出 ---------- */
+  /* ---------- 送出：在網站內填寫 Email，直接傳送到 Google 表單 ---------- */
   const F = C.googleForm || {};
-  function formUrl() {
-    const u = new URL(F.viewUrl);
-    u.searchParams.set("usp", "pp_url");
-    st.picks.forEach(c => u.searchParams.append(F.picksEntry, c));
-    return u.href;
-  }
-  function markSent() {
-    st.sent = true; st.at = Date.now(); save();
-    $("#dlg").close(); go("result"); toast("謝謝你一起回顧這一年！");
-  }
-  function sendList() {
-    if (!F.viewUrl || !F.picksEntry) {
-      if (DEV) return markSent();   // 設計預覽模式可以不設定表單
-      return toast("送出功能尚未設定完成，請稍後再試");
+  let sending = false;
+  async function sendList() {
+    if (sending || st.sent) return;
+    const input = $("#voterEmail");
+    const email = input.value.trim();
+    if (!email) {
+      $("#doSend").disabled = true;
+      input.focus();
+      return toast("請先填寫 Email");
     }
-    window.open(formUrl(), "_blank", "noopener");
-    openDialog(`
-      <h2>在 Google 表單送出了嗎？</h2>
-      <p>表單已在新分頁開啟，登入後按「提交」才算完成。</p>
-      <p class="draft-note">沒看到新分頁？請按「重新開啟表單」。</p>
-      <div class="dlg-actions">
-        <button class="btn btn-primary" id="doneSend">我已經送出了</button>
-        <button class="btn btn-ghost" id="reopen">重新開啟表單</button>
-      </div>`);
-    $("#doneSend").onclick = markSent;
-    $("#reopen").onclick = () => window.open(formUrl(), "_blank", "noopener");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      input.focus();
+      return toast("請填寫正確的 Email 格式，例如 name@example.com");
+    }
+    if (!st.picks.length || st.picks.length > C.maxPicks) return;
+    if (YD.status === "closed" || Date.now() > DEADLINE) return toast("圈選已截止，謝謝你的關注");
+    if (!F.action || !F.picksEntry || !F.emailEntry) return toast("送出功能尚未設定完成，請稍後再試");
+    const btn = $("#doSend");
+    sending = true;
+    input.disabled = true;
+    btn.disabled = true;
+    btn.textContent = "送出中…";
+    try {
+      const body = new URLSearchParams();
+      st.picks.forEach(c => body.append(F.picksEntry, c));
+      body.append(F.emailEntry, email);
+      // Google 不提供跨來源回應；實際入表結果需由管理者在回覆試算表確認。
+      await fetch(F.action, { method: "POST", mode: "no-cors", credentials: "omit", body });
+      st.sent = true; st.at = Date.now(); save();
+      $("#dlg").close(); go("result"); toast("謝謝你一起回顧這一年！");
+    } catch (e) {
+      toast("送出失敗，請確認網路連線後再試一次");
+    } finally {
+      sending = false;
+      input.disabled = false;
+      btn.disabled = !input.value.trim();
+      btn.textContent = "送出我的清單";
+    }
   }
 
   /* ===================== 年度結果 ===================== */
@@ -606,8 +623,8 @@
           <div class="card" style="margin-top:18px"><h2>參與方式與隱私</h2>
             <ol class="rules">
               <li>每人最多圈 ${C.maxPicks} 件，送出後無法修改。</li>
-              <li>圈選透過司改會的 Google 表單送出，要登入 Google 帳號，每個帳號限填一次，表單會記錄你的電子郵件。</li>
-              <li>電子郵件只用來確認每人送出一次，不公開、不另作他用，只有負責統計的司改會同仁看得到，結果公布後刪除。想查詢或刪除自己的資料，請透過司改會官網與我們聯絡。</li>
+              <li>在網站填寫 Email 後即可送出，不需要登入 Google 帳號；同一個瀏覽器送出後無法再次投票。</li>
+              <li>電子郵件只用來核對投票資料，不公開、不另作他用，只有負責統計的司改會同仁看得到，結果公布後刪除。想查詢或刪除自己的資料，請透過司改會官網與我們聯絡。</li>
               <li>圈選到 ${fmtDate(DEADLINE)} 截止，結果在 ${C.announce} 公布。</li>
             </ol></div>
           <div class="card" style="margin-top:18px"><h2>免責聲明</h2>
