@@ -63,10 +63,10 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
-    const navName = PAGE === "judicial-yuan-survey" ? "司法院一般民眾對司法認知調查" : PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : (NAV.find(n => n[0] === PAGE) || [])[1];
+    const navName = PAGE === "judicial-yuan-survey" ? "司法院一般民眾對司法認知調查" : PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : PAGE === "tadels-survey" ? "臺灣法律與社會變遷調查" : (NAV.find(n => n[0] === PAGE) || [])[1];
     document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
-    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls" : PAGE)));
+    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls" : PAGE === "tadels-survey" ? "polls" : PAGE)));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
     // 手機版選單可橫向捲動：把目前頁面的按鈕捲進畫面
     const cur = $(".nav [aria-current]"), nav = $(".nav");
@@ -130,9 +130,13 @@
 
   /* 段落：依換行分段，每段首行縮排兩字 */
   const paras = t => String(t || "").split(/\n+/).filter(s => s.trim()).map(s => `<p>${esc(s.trim())}</p>`).join("");
+  /* 圖片比例：未設定時沿用 3:2；比例名稱採白名單，避免直接把資料當 CSS 注入。 */
+  const IMAGE_RATIOS = { "3:2": "ratio-3-2", "2:3": "ratio-2-3", "4:5": "ratio-4-5", "5:4": "ratio-5-4", "9:16": "ratio-9-16" };
+  const imageRatio = e => Object.prototype.hasOwnProperty.call(IMAGE_RATIOS, e.imageRatio) ? e.imageRatio : "3:2";
+  const imageRatioClass = e => IMAGE_RATIOS[imageRatio(e)];
   /* 圖片：沒有圖時顯示預留框 */
-  const picHTML = e => e.image ? `<img class="pic" src="${esc(e.image)}" alt="" loading="lazy">`
-    : DEV ? `<span class="pic-ph"><span><b>🖼</b>圖片預留<br>建議 3:2</span></span>` : `<span class="pic-ph pic-empty">${STAMP()}</span>`;
+  const picHTML = e => e.image ? `<img class="pic ${imageRatioClass(e)}" src="${esc(e.image)}" alt="" loading="lazy">`
+    : DEV ? `<span class="pic-ph ${imageRatioClass(e)}"><span><b>🖼</b>圖片預留<br>建議 ${imageRatio(e)}</span></span>` : `<span class="pic-ph pic-empty ${imageRatioClass(e)}">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
   const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}"><span class="pic-wrap">${picHTML(e)}${e.image && e.imageSource ? `<span class="pic-credit">圖／${esc(e.imageSource[0])}</span>` : ""}</span></button>` : "";
@@ -298,12 +302,15 @@
 
   function renderTray() {
     if (PAGE !== "review") return;
-    const n = st.picks.length, max = C.maxPicks, over = n > max;
+    const n = st.picks.length, max = C.maxPicks, displaySlots = 10, over = n > max;
     let html = st.picks.map((c, i) => `<span class="pick-wrap">
         <button class="pick-chip ${i >= max ? "extra" : ""}" data-unpick="${c}" aria-label="取消圈選 ${c}：${esc(byCode[c].title)}">${c}</button>
         <span class="tip"><button class="tip-box" data-open="${c}"><span class="tt">${esc(byCode[c].title)}</span><small>點標題看完整回顧，點編號取消圈選</small></button></span>
       </span>`).join("");
-    for (let i = n; i < max; i++) html += `<span class="tray-slot"></span>`;
+    for (let i = n; i < displaySlots; i++) {
+      const slotType = i < max ? "available" : "preview";
+      html += `<span class="tray-slot ${slotType}" aria-label="${slotType === "available" ? "可投票空格" : "示意空格，不列入投票"}"></span>`;
+    }
     $("#traySlots").innerHTML = html;
     $("#trayText").innerHTML = n === 0
       ? `<b>我的年度大事</b><br>讀到覺得重要的事件，就在右邊蓋章`
@@ -573,30 +580,8 @@
   }
 
   /* ===================== 司法民調 ===================== */
-  function lineChart(points, color) {
-    const w = 520, h = 210, L = 42, R = 14, T = 16, B = 30;
-    const tv = points.map(([lab]) => { const [y, m] = String(lab).split("/"); return +y + (m ? (m - 1) / 12 : 0); });
-    const t0 = Math.min(...tv), t1 = Math.max(...tv);
-    const xs = i => t1 === t0 ? (L + w - R) / 2 : L + (tv[i] - t0) / (t1 - t0) * (w - L - R);
-    const ys = v => T + (1 - v / 100) * (h - T - B);
-    let grid = "";
-    [0, 25, 50, 75, 100].forEach(v => grid += `<line x1="${L}" x2="${w - R}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${ys(v) + 4}" text-anchor="end">${v}</text>`);
-    let path = "", pen = false;
-    points.forEach(([, v], i) => { if (v == null) { pen = false; return; } path += `${pen ? "L" : "M"}${xs(i).toFixed(1)} ${ys(v).toFixed(1)} `; pen = true; });
-    const dots = points.map(([lab, v], i) => `<text x="${xs(i)}" y="${h - 8}" text-anchor="middle">${lab}</text>
-      ${v == null ? `<text x="${xs(i)}" y="${ys(6)}" text-anchor="middle">無資料</text>` : `<circle cx="${xs(i)}" cy="${ys(v)}" r="4.5" fill="${color}"/><text x="${xs(i)}" y="${ys(v) - 10}" text-anchor="middle">${v}</text>`}`).join("");
-    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="歷年趨勢折線圖，縱軸為百分比">${grid}<path d="${path}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
-  }
   function pagePolls() {
     const P = window.JRF_POLLS;
-    const trends = P.trends.map(t => {
-      const valid = t.points.filter(p => p[1] != null), last = valid[valid.length - 1], prev = valid[valid.length - 2];
-      const diff = prev ? +(last[1] - prev[1]).toFixed(2) : null;
-      return `<article class="poll"><h3>${t.org}｜${t.title}</h3><p class="q">${t.question}</p>
-        <div class="now">${last[1]}%<small>${last[0]}${diff != null ? `，較 ${prev[0]} ${diff >= 0 ? "增加" : "減少"} ${Math.abs(diff)} 個百分點` : ""}</small></div>
-        ${lineChart(t.points, t.color)}
-        <p class="meta">${t.survey}<br>${t.note}<br>資料來源：${t.sources.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a>`).join("、")}</p></article>`;
-    }).join("");
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
         <p class="page-sub">民眾怎麼看司法？這裡整理了不同單位的歷年司法民調，資料更新至 ${P.updated}。</p></div>
       <section style="padding-top:24px"><div class="wrap"><p class="explain"><b>不同單位的民調不能直接比較。</b>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，建議比較同一單位歷年數字較準。</p></div></section>
@@ -605,7 +590,8 @@
         <article class="card ccu-entry"><div><h3>臺灣民眾對司法與犯罪防制滿意度調查（2018-2025）</h3><p>國立中正大學犯罪研究中心及犯罪防治學系</p><a class="btn btn-ghost btn-small" href="#ccu-survey" data-go="ccu-survey">查看完整調查結果 →</a></div>${window.JRF_CCU_PAGE.preview()}</article>
         <article class="card ccu-entry gvm-entry"><div><h3>遠見臺灣社會信任調查</h3><p>歷年法官、警察信任度，以及民眾對司法能否維護公平正義的評價。</p><a class="btn btn-ghost btn-small" href="#gvm-survey" data-go="gvm-survey">查看完整調查結果 →</a></div>${window.JRF_GVM_PAGE.preview()}</article>
         <article class="card ccu-entry judicial-yuan-entry"><div><h3>司法院一般民眾對司法認知調查（105–114年）</h3><p>司法院｜法律觀念、司法信任與法院經驗等12項調查結果。</p><a class="btn btn-ghost btn-small" href="#judicial-yuan-survey" data-go="judicial-yuan-survey">查看完整調查結果 →</a></div>${window.JRF_JUDICIAL_PAGE.preview()}</article>
-        <div class="poll-grid">${trends}</div></div></section>`);
+        <article class="card ccu-entry tadels-entry"><div><h3>臺灣法律與社會變遷調查</h3><p>TaDELS｜2009–2024年九組司法信任與法律公平性題目。</p><a class="btn btn-ghost btn-small" href="#tadels-survey" data-go="tadels-survey">查看完整調查結果 →</a></div>${window.JRF_TADELS_PAGE.preview()}</article>
+        </div></section>`);
     window.JRF_CCU_PAGE.bind($("#main"));
     window.JRF_GVM_PAGE.bind($("#main"));
     window.JRF_JUDICIAL_PAGE.bind($("#main"));
@@ -624,6 +610,11 @@
   function pageJudicialYuanSurvey() {
     main(window.JRF_JUDICIAL_PAGE.render());
     window.JRF_JUDICIAL_PAGE.bind($("#main"));
+  }
+
+  function pageTadelsSurvey() {
+    main(window.JRF_TADELS_PAGE.render());
+    window.JRF_TADELS_PAGE.bind($("#main"));
   }
 
   /* ===================== 關於 ===================== */
@@ -657,7 +648,7 @@
       </div></section>`);
   }
 
-  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, about: pageAbout };
+  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
   go(pageFromHash(), {}, true);

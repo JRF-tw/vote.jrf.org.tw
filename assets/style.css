@@ -142,6 +142,8 @@ section{padding:28px 0 56px}
 .tray .wrap{display:flex;align-items:center;gap:16px}
 .tray-slots{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .tray-slot{width:38px;height:38px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--bg) 50%,transparent);display:grid;place-items:center}
+.tray-slot.available{border-style:solid;border-color:color-mix(in srgb,var(--sun) 78%,var(--bg));background:color-mix(in srgb,var(--sun) 12%,transparent)}
+.tray-slot.preview{opacity:.42}
 .tray-slot.on{border:0;background:var(--surface)}
 .tray-slot .stamp-svg{width:34px;height:34px;transform:rotate(-8deg)}
 .tray-text{font-size:15px;line-height:1.4;flex:1;min-width:0}
@@ -320,6 +322,10 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
 
 /* 圖片與預留框 */
 .pic{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:12px;background:var(--surface-2)}
+.pic.ratio-2-3,.pic-ph.ratio-2-3{aspect-ratio:2/3}
+.pic.ratio-4-5,.pic-ph.ratio-4-5{aspect-ratio:4/5}
+.pic.ratio-5-4,.pic-ph.ratio-5-4{aspect-ratio:5/4}
+.pic.ratio-9-16,.pic-ph.ratio-9-16{aspect-ratio:9/16}
 .pic-ph{display:grid;place-items:center;text-align:center;width:100%;aspect-ratio:3/2;border-radius:12px;border:2px dashed var(--line);
   background:repeating-linear-gradient(135deg,var(--surface-2) 0 12px,var(--surface) 12px 24px);color:var(--muted);font-size:13px;line-height:1.5;padding:8px}
 .pic-ph b{display:block;font-size:22px;opacity:.6}
@@ -455,6 +461,23 @@ dialog{max-width:760px}
 .ccu-notice{padding:16px;border-left:4px solid var(--jrf);background:var(--surface-2);scroll-margin-top:90px;margin-top:20px!important}
 .ccu-source-list{padding-left:1.4em}
 .ccu-source-list li{margin-bottom:10px;overflow-wrap:anywhere}
+.tadels-grid{grid-template-columns:repeat(2,1fr)}
+.tadels-card{scroll-margin-top:90px}
+.tadels-series-label{margin:0 0 12px;line-height:1.6}
+.tadels-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tadels-table{margin-top:12px}
+.tadels-table caption{font-size:14px}
+.tadels-details{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.tadels-details-body{margin-top:14px}
+.tadels-detail-content{padding:4px 0 12px}
+.tadels-point-detail{margin-top:14px;padding:14px 16px;background:var(--surface-2);border-left:4px solid var(--safety-accent);line-height:1.7}
+.tadels-point-detail .tadels-table{margin-top:8px}
+.tadels-note{margin:12px 0 0!important}
+.tadels-card .gvm-point{cursor:pointer;outline:none}
+.tadels-card .gvm-point[aria-pressed="true"] .gvm-dot{stroke:var(--ink);stroke-width:3}
+.tadels-card .gvm-point:focus-visible .gvm-dot{stroke:var(--ink);stroke-width:4}
+.tadels-card .ccu-safety-chart{min-height:230px}
+@media (max-width:700px){.tadels-card{padding:16px}.tadels-card .ccu-safety-number{font-size:38px}.tadels-methods{overflow-x:auto}.tadels-methods .ccu-table{min-width:680px}}
 @media(max-width:720px){
   .ccu-entry{grid-template-columns:1fr}
 }
