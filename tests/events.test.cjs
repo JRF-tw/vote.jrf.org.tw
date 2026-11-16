@@ -44,6 +44,7 @@ function setup(storage = {}, options = {}) {
         });
       },
       className: '', open: false, clientWidth: 100, offsetWidth: 100, scrollLeft: 0,
+      style: { setProperty(name, value) { this[name] = value; } },
       getBoundingClientRect() { return { left: 0 }; },
       setAttribute(name, value) { this[name] = value; },
       classList: { add() {}, remove() {}, toggle() {} },
@@ -58,7 +59,8 @@ function setup(storage = {}, options = {}) {
     document,
     localStorage: { getItem: key => storage[key] ?? null, setItem(key, value) { storage[key] = value; } },
     location: { pathname: '/', search: '', hash: '' }, history: { pushState() {} },
-    setTimeout, clearTimeout, requestAnimationFrame: callback => callback()
+    setTimeout, clearTimeout, requestAnimationFrame: callback => callback(),
+    getComputedStyle: () => ({ gap: '8px', getPropertyValue: () => '' })
   });
   for (const file of ['assets/config.js', 'data/events.js', 'assets/event-topics.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context);
@@ -93,7 +95,7 @@ function setup(storage = {}, options = {}) {
   const boot = appSource.lastIndexOf('  renderChrome();');
   assert.ok(boot >= 0, 'application bootstrap marker must exist');
   vm.runInContext(appSource.slice(0, boot) +
-    'window.test = {go, openDetail, togglePick, personaOf, toggleTagList, toggleFilter, st}; })();', context);
+    'window.test = {go, openDetail, togglePick, personaOf, toggleTagList, toggleFilter, trayLayout, renderTray, st}; })();', context);
   return { ...context.window, element, document, scrolls, events: data.events,
     buttonsFor: code => timelineButtons.filter(button => button.dataset.pick === code) };
 }
@@ -280,6 +282,35 @@ test('missing news URLs, image credits, images and full reviews use supported fa
   html = element('#dlgInner').innerHTML;
   assert.ok(!html.includes('class="d-pic"'));
   assert.ok(html.includes('<p>以摘要作為回顧</p>'));
+});
+
+test('tray shrinks circles into two rows and rejects new picks at its visible capacity', () => {
+  const { test: app, element, events } = setup();
+  element('#traySlots').clientWidth = 208;
+  app.go('review');
+  const normal = app.trayLayout();
+  assert.equal(normal.columns, 4);
+  assert.equal(normal.size, 42);
+  assert.equal(normal.capacity, 10);
+  for (const event of events.slice(0, 10)) app.togglePick(event.code);
+  const compact = app.trayLayout();
+  assert.equal(compact.size, 32);
+  assert.equal(compact.columns, 5);
+  assert.equal(Math.ceil(app.st.picks.length / compact.columns), 2);
+  assert.match(element('#trayText').innerHTML, /已圈 <span class="tray-number">10<\/span> 件/);
+  app.togglePick(events[10].code);
+  assert.equal(app.st.picks.length, 10);
+  assert.match(element('#toast').textContent, /兩列已滿/);
+  app.togglePick(events[0].code);
+  app.togglePick(events[10].code);
+  assert.equal(app.st.picks.length, 10);
+  assert.ok(app.st.picks.includes(events[10].code));
+  // A smaller window keeps existing picks and still fits them into two rows.
+  element('#traySlots').clientWidth = 100;
+  app.renderTray();
+  assert.equal(app.st.picks.length, 10);
+  assert.equal(app.trayLayout().columns, 5);
+  assert.ok(app.trayLayout().size < 32);
 });
 
 test('updated topic membership gives filters and event tags matching color families', () => {

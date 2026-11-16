@@ -381,7 +381,10 @@
   function togglePick(code) {
     if (st.sent || CLOSED) return;
     if (st.picks.includes(code)) st.picks = st.picks.filter(p => p !== code);
-    else st.picks.push(code);
+    else {
+      if (st.picks.length >= trayLayout().capacity) return toast("圈選清單的兩列已滿，請先取消部分事件再新增");
+      st.picks.push(code);
+    }
     save();
     const on = st.picks.includes(code);
     // 只更新該事件的所有圈選入口，保留卡片、圖片尺寸與鍵盤焦點。
@@ -394,9 +397,26 @@
     renderTray();
   }
 
+  function trayLayout(count = st.picks.length) {
+    const slots = $("#traySlots"), css = getComputedStyle(slots);
+    const width = slots.clientWidth;
+    const normal = parseFloat(css.getPropertyValue("--tray-normal-size")) || 42;
+    const small = parseFloat(css.getPropertyValue("--tray-small-size")) || 32;
+    const gap = parseFloat(css.gap) || 8;
+    const perRow = size => Math.max(1, Math.floor((width + gap) / (size + gap)));
+    const normalColumns = perRow(normal), capacity = perRow(small) * 2;
+    const compact = count > normalColumns;
+    const columns = compact ? Math.max(perRow(small), Math.ceil(count / 2)) : normalColumns;
+    return { capacity, columns, size: compact ? Math.min(small, (width - gap * (columns - 1)) / columns) : normal,
+      displaySlots: Math.max(count, Math.min(10, normalColumns)) };
+  }
+
   function renderTray() {
     if (PAGE !== "review") return;
-    const n = st.picks.length, max = C.maxPicks, displaySlots = 10, over = n > max;
+    const n = st.picks.length, max = C.maxPicks, over = n > max;
+    const { columns, size, displaySlots } = trayLayout(n);
+    $("#traySlots").style.setProperty("--tray-size", `${size}px`);
+    $("#traySlots").style.setProperty("--tray-columns", columns);
     let html = st.picks.map((c, i) => `<span class="pick-wrap">
         <button class="pick-chip ${i >= max ? "extra" : ""}" data-unpick="${c}" aria-label="取消圈選 ${c}：${esc(byCode[c].title)}">${c}</button>
         <span class="tip"><button class="tip-box" data-open="${c}"><span class="tt">${esc(byCode[c].title)}</span><small>點標題看完整回顧，點編號取消圈選</small></button></span>
@@ -406,11 +426,12 @@
       html += `<span class="tray-slot ${slotType}" aria-label="${slotType === "available" ? "可投票空格" : "示意空格，不列入投票"}"></span>`;
     }
     $("#traySlots").innerHTML = html;
+    const number = value => `<span class="tray-number">${value}</span>`;
     $("#trayText").innerHTML = n === 0
       ? `<b>我的年度大事</b><br>讀到覺得重要的事件，就在右邊蓋章`
       : over
-        ? `<b class="warn">已圈 ${n} 件</b><br>最多只能送出 ${max} 件，請再取消 ${n - max} 件`
-        : `<b>已圈 ${n} 件</b><br>${n < max ? `還可以再圈 ${max - n} 件，也可以先完成清單` : "圈滿了！完成你的年度大事清單吧"}`;
+        ? `<b class="warn">已圈 ${number(n)} 件</b><br>最多只能送出 ${number(max)} 件，請再取消 ${number(n - max)} 件`
+        : `<b>已圈 ${number(n)} 件</b><br>${n < max ? `還可以再圈 ${number(max - n)} 件，也可以先完成清單` : "圈滿了！完成你的年度大事清單吧"}`;
     $("#tray").classList.toggle("over", over);
     $("#submitBtn").disabled = n === 0;
     $("#tray").classList.toggle("hide", st.sent || CLOSED);
@@ -727,5 +748,6 @@
   const PAGES = { home: pageHome, review: pageReview, result: pageResult, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
+  window.addEventListener("resize", renderTray);
   go(pageFromHash(), {}, true);
 })();
