@@ -30,8 +30,6 @@
       <p>本頁年度依研究報告所屬年度標示。研究通常在該年度結束後、次年1月至2月進行電話訪問，調查有效樣本約1,800至1,900人，並於次年2月左右召開記者會發布結果。</p>
       <a href="#" data-ccu-jump="ccu-sources">資料來源 ↓</a>
       </div></div></section>
-      <section class="ccu-section"><div class="wrap"><h2 class="sec-title">資料解讀注意事項</h2>
-      <p>本頁整理國立中正大學犯罪研究中心歷年「臺灣民眾對司法與犯罪防制滿意度之調查研究」的公開結果。各項數據反映受訪民眾的主觀評價，不宜直接等同司法制度或治安政策的客觀成效。</p></div></section>
       <section class="ccu-section"><div class="wrap"><h2 class="sec-title">歷年調查結果</h2>
       <div class="poll-grid">${metrics.map(([key,title,,color]) => trendCard(rows,key,title,color)).join('')}</div></div></section>
       <section class="ccu-section" id="ccu-sources"><div class="wrap"><div class="card"><h2>資料來源</h2>

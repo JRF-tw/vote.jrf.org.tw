@@ -6,7 +6,7 @@
   "use strict";
 
   const MEDIA = window.JRF_MEDIA || {};
-  const C = window.JRF_CONFIG, DATA = window.JRF_DATA, TAGS = window.JRF_TAGS, PERSONAS = window.JRF_PERSONAS;
+  const C = window.JRF_CONFIG, DATA = window.JRF_DATA, TAGS = window.JRF_TAGS, TOPICS = window.JRF_EVENT_TOPICS;
   const YEAR = C.year, YD = DATA[YEAR];
   const DEV = !!C.devPreview;   // 設計預覽模式：顯示圖片預留文字、示意連結等
   /* 重點新聞：標了 key 的新聞；都沒標就用第一則 */
@@ -20,7 +20,7 @@
     const ds = keyNews(e).map(n => n.date).sort();
     return ds.map((d, i) => { const x = ymd(d), p = i ? ymd(ds[i - 1]) : null; return p && p.y === x.y ? `${x.m}月${x.d}日` : fmtD(d); }).join("、");
   };
-  const EV = [...YD.events].sort((a, b) => firstKey(a).localeCompare(firstKey(b)) || a.code.localeCompare(b.code));
+  const EV = [...YD.events].sort((a, b) => firstKey(a).localeCompare(firstKey(b)) || Number(a.code) - Number(b.code));
   const byCode = Object.fromEntries(EV.map(e => [e.code, e]));
   const DEADLINE = new Date(C.deadline).getTime();
   const CLOSED = YD.status === "closed" || Date.now() > DEADLINE;   // 圈選截止
@@ -35,7 +35,7 @@
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return mem[k] || null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { mem[k] = v; } }
   };
-  const KEY = "jrf-review-" + YEAR;
+  const KEY = `jrf-review-${YEAR}-${C.ballotVersion || "launch-1"}`;
   let st = store.get(KEY) || { picks: [], sent: false, at: 0 };
   st.picks = (st.picks || []).filter(c => byCode[c]);   // 事件代碼若被改動，丟掉瀏覽器裡已不存在的舊代碼，避免頁面壞掉
   const save = () => store.set(KEY, st);
@@ -46,17 +46,26 @@
     const t = $("#toast"); t.textContent = msg; t.classList.add("show");
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600);
   }
-  function personaOf(codes) {
-    if (!codes.length) return null;
-    const tally = {};
-    codes.forEach(c => { const t = byCode[c].tag; tally[t] = (tally[t] || 0) + 1; });
-    const max = Math.max(...Object.values(tally));
-    return PERSONAS[byCode[codes.find(c => tally[byCode[c].tag] === max)].tag];
+  const tagsOf = TOPICS.tagsOf;
+  const tagClass = tag => `t-tone-${Math.max(0, TOPICS.groupOf(tag))}`;
+  const tagsHTML = e => tagsOf(e).map(t => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join("");
+  const tagsText = e => tagsOf(e).join("／");
+  const personaOf = codes => TOPICS.personaOf(codes.map(c => byCode[c]).filter(Boolean));
+  const expandedTagLists = new Set();
+  const tagToggleHTML = id => `<div class="tag-toggle-row"><button class="more tag-toggle" data-toggle-tags="${id}" aria-controls="${id}" aria-expanded="${expandedTagLists.has(id)}">${expandedTagLists.has(id) ? "收合標籤" : "展開全部標籤"}</button></div>`;
+  function toggleTagList(id) {
+    if (expandedTagLists.has(id)) expandedTagLists.delete(id);
+    else expandedTagLists.add(id);
+    const expanded = expandedTagLists.has(id);
+    $("#" + id).classList.toggle("expanded", expanded);
+    const button = document.querySelector(`[data-toggle-tags="${id}"]`);
+    button.setAttribute("aria-expanded", String(expanded));
+    button.textContent = expanded ? "收合標籤" : "展開全部標籤";
   }
 
   /* ---------- 分頁切換 ---------- */
   let PAGE = "home", PARAMS = {};
-  const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度結果"], ["archive", "歷年回顧"], ["polls", "司法民調"], ["about", "關於"]];
+  const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度結果"], ["polls", "司法民調"], ["about", "關於"]];
   const pageFromHash = () => (location.hash.slice(1) || "home").split("?")[0];
   function go(page, params, fromHistory) {
     PAGE = Object.hasOwn(PAGES, page) ? page : "home";
@@ -77,6 +86,8 @@
   }
   // 所有 data-go 連結都由這裡接手
   document.addEventListener("click", ev => {
+    const toggle = ev.target.closest("[data-toggle-tags]");
+    if (toggle) { toggleTagList(toggle.dataset.toggleTags); return; }
     const g = ev.target.closest("[data-go]");
     if (!g) return;
     ev.preventDefault();
@@ -131,7 +142,7 @@
   /* 段落：依換行分段，每段首行縮排兩字 */
   const paras = t => String(t || "").split(/\n+/).filter(s => s.trim()).map(s => `<p>${esc(s.trim())}</p>`).join("");
   /* 圖片比例：未設定時沿用 3:2；比例名稱採白名單，避免直接把資料當 CSS 注入。 */
-  const IMAGE_RATIOS = { "3:2": "ratio-3-2", "2:3": "ratio-2-3", "4:5": "ratio-4-5", "5:4": "ratio-5-4", "9:16": "ratio-9-16" };
+  const IMAGE_RATIOS = { "original": "ratio-original", "3:2": "ratio-3-2", "2:3": "ratio-2-3", "4:5": "ratio-4-5", "5:4": "ratio-5-4", "9:16": "ratio-9-16" };
   const imageRatio = e => Object.prototype.hasOwnProperty.call(IMAGE_RATIOS, e.imageRatio) ? e.imageRatio : "3:2";
   const imageRatioClass = e => IMAGE_RATIOS[imageRatio(e)];
   /* 圖片：沒有圖時顯示預留框 */
@@ -139,10 +150,14 @@
     : DEV ? `<span class="pic-ph ${imageRatioClass(e)}"><span><b>🖼</b>圖片預留<br>建議 ${imageRatio(e)}</span></span>` : `<span class="pic-ph pic-empty ${imageRatioClass(e)}">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
-  const imgBtn = e => hasPic(e) ? `<button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}"><span class="pic-wrap">${picHTML(e)}${e.image && e.imageSource ? `<span class="pic-credit">圖／${esc(e.imageSource[0])}</span>` : ""}</span></button>` : "";
-  const picCredit = e => e.image && e.imageSource ? `<p class="pic-source">圖片來源：<a href="${esc(e.imageSource[1])}" target="_blank" rel="noopener">${esc(e.imageSource[0])}</a></p>` : "";
+  const imgBtn = e => hasPic(e) ? `<div class="ev-image"><button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>${picCredit(e)}</div>` : "";
+  const picCredit = e => {
+    if (!e.image || !e.imageSource || !e.imageSource.some(Boolean)) return "";
+    const [name, url] = e.imageSource;
+    const label = esc(name || url);
+    return `<p class="pic-source">${url ? `<a class="source-tag" href="${esc(url)}" target="_blank" rel="noopener">圖片來源：${label}</a>` : `<span class="source-tag">圖片來源：${label}</span>`}</p>`;
+  };
   const mediaStyle = m => { const c = MEDIA[m] || ["#ECEEF2", "#4A5168"]; return `background:${c[0]};color:${c[1]}`; };
-  const newsUrl = n => n.url || `https://www.google.com/search?q=${encodeURIComponent(n.media + " " + n.title)}`;
 
   function openDetail(code, year) {
     const D = year ? DATA[year] : YD;
@@ -150,17 +165,17 @@
     const canPick = D === YD && !st.sent && !CLOSED;
     const on = st.picks.includes(code);
     openDialog(`
-      <div class="d-meta"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${dateOf(e)}</span></div>
+      <div class="d-meta"><span class="ev-code">${e.code}</span>${tagsHTML(e)}<span>${dateOf(e)}</span></div>
       <h2 class="d-title">${esc(e.title)}</h2>
       ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}${picCredit(e)}</div>` : ""}
       <h3 class="d-sec">事件回顧</h3>
       <div class="full">${e.full ? paras(e.full) : paras(e.summary) + (DEV ? `<p class="draft-note" style="text-indent:0">詳細版撰寫中，目前先顯示簡短版。</p>` : "")}</div>
-      <h3 class="d-sec">時間軸</h3>
+      <h3 class="d-sec">相關事件時間軸</h3>
       <ol class="tl">${[...e.news].sort((x, y) => x.date.localeCompare(y.date)).map(n => `
-        <li class="${n.key ? "key" : ""}"><${n.url || DEV ? `a href="${esc(newsUrl(n))}" target="_blank" rel="noopener"` : `div class="nolink"`}>
-          <span class="when">${fmtD(n.date)}${n.key ? `<span class="keytag">重點</span>` : ""}</span>
+        <li class="${n.key ? "key" : ""}"><${n.url ? `a href="${esc(n.url)}" target="_blank" rel="noopener"` : `div class="nolink"`}>
+          <span class="when">${fmtD(n.date)}</span>
           <span class="h">${esc(n.title)}</span><span class="media" style="${mediaStyle(n.media)}">${esc(n.media)}</span>
-        </${n.url || DEV ? "a" : "div"}></li>`).join("")}</ol>
+        </${n.url ? "a" : "div"}></li>`).join("")}</ol>
       <div class="dlg-actions" style="margin-top:24px">
         ${canPick ? `<button class="btn ${on ? "btn-ghost" : "btn-primary"}" id="dlgPick">${on ? "取消圈選" : "圈選"}</button>` : ""}
         <button class="btn btn-ghost" id="dlgBack">關閉</button>
@@ -172,24 +187,24 @@
   /* ===================== 首頁 ===================== */
   function pageHome() {
     const figures = [
-      ["6.7 倍", "法院科技監控的使用數增加 6.7 倍，卻接連有被告破壞電子腳環、手環逃亡。", "01"],
-      ["2 / 71", "新北地院開出 71 個書記官職缺，最後只有 2 個人來報到。", "07"],
-      ["14 年", "王隆昌被判有罪、入監服刑，經過 14 年才終於改判無罪。", "19"],
-      ["20 歲", "兒少性侵被害人滿 20 歲之前，不再計入追訴期。", "10"]
+      ["6.7 倍", "2025年法院使用323件，較2024年的48件增加至6.7倍。", "3"],
+      ["2 / 71", "新北地院書記官缺71人僅2人報到。", "11"],
+      ["14 年", "2026年5月，高院裁定開始再審，10月1日改判無罪，11月2日無罪確定，歷時14年的冤案終獲平反。", "26"],
+      ["20 歲", "刑法三讀修正　兒少性侵案被害人20歲前不計追訴期", "15"]
     ];
     main(`
       <section class="hero"><div class="wrap">
         <div>
           <h1>${YEAR}，<br>司法圈發生了什麼事？</h1>
-          <p class="lead">電子腳環被剪斷、書記官找不到人、跨國鎮壓伸進台灣，也有人等了 14 年終於洗清冤屈。我們整理了今年 ${EV.length} 件重要的司法事件，邀你一起回顧。</p>
+          <p class="lead">我們整理了今年 ${EV.length} 件重要的司法事件，邀你一起閱讀事件摘要、完整回顧與新聞時間軸，圈選心中的年度司法大事。</p>
           <button class="btn btn-primary" data-go="review">開始回顧</button>
         </div>
         <div class="ballot" aria-hidden="true">
           <div class="ballot-head">${YEAR} 司法大事記</div>
-          <div class="ballot-row"><span>3月</span><span>法庭影音公播首例</span><span class="slot"></span></div>
-          <div class="ballot-row"><span>6月</span><span>司法院發布 AI 使用指引</span><span class="slot"><svg class="hero-stamp stamp-svg" viewBox="0 0 100 100"><use href="#bu"/></svg></span></div>
-          <div class="ballot-row"><span>7月</span><span>兒少性侵追訴時效修法</span><span class="slot"></span></div>
-          <div class="ballot-row"><span>10月</span><span>南港展覽館案翻案</span><span class="slot"></span></div>
+          ${["1", "7", "10", "26"].map(code => {
+            const e = byCode[code];
+            return `<div class="ballot-row"><span>${monthLabel(firstKey(e))}</span><span>${esc(e.title)}</span><span class="slot"></span></div>`;
+          }).join("")}
         </div>
       </div></section>
 
@@ -201,8 +216,9 @@
 
       <section><div class="wrap">
         <h2 class="sec-title">依主題回顧</h2>
-        <p class="sec-sub">今年的司法大事，大致可以分成這五類。</p>
-        <div class="topics">${TAGS.map(t => `<button class="topic t-${t}" data-go="review" data-tag="${t}"><b>${t}</b><span>${EV.filter(e => e.tag === t).length} 件事件</span></button>`).join("")}</div>
+        <p class="sec-sub">依事件標籤探索今年的司法大事；同一事件可以有多個標籤。</p>
+        <div class="topics tag-options${expandedTagLists.has("homeTopics") ? " expanded" : ""}" id="homeTopics">${[...TAGS].sort((a, b) => EV.filter(e => tagsOf(e).includes(b)).length - EV.filter(e => tagsOf(e).includes(a)).length).map(t => `<button class="topic ${tagClass(t)}" data-go="review" data-tag="${t}"><b>${t}</b><span>${EV.filter(e => tagsOf(e).includes(t)).length} 件事件</span></button>`).join("")}</div>
+        ${tagToggleHTML("homeTopics")}
       </div></section>
 
       <section><div class="wrap">
@@ -218,7 +234,6 @@
       <section><div class="wrap">
         <div class="doors">
           <button class="door" data-go="polls" style="text-align:left"><div class="ico">🔎</div><h3>司法民調</h3><p>這一年，民眾怎麼看司法？各單位的調查一次看懂。</p></button>
-          <button class="door" data-go="archive" style="text-align:left"><div class="ico">📚</div><h3>歷年回顧</h3><p>每一年的司法大事和年度結果，都收在這裡。</p></button>
           <button class="door" data-go="about" style="text-align:left"><div class="ico">💬</div><h3>關於這個網站</h3><p>為什麼要回顧一年的司法大事？事件是怎麼整理的？</p></button>
         </div>
       </div></section>`);
@@ -238,7 +253,8 @@
       </div>
       <section style="padding-top:24px"><div class="wrap">
         ${notice}
-        <div class="filters" role="group" aria-label="依主題篩選" id="filters"></div>
+        <div class="filters tag-options${expandedTagLists.has("filters") ? " expanded" : ""}" role="group" aria-label="依主題篩選" id="filters"></div>
+        ${tagToggleHTML("filters")}
         <div id="timeline"></div>
       </div></section>`);
     renderReviewList();
@@ -247,14 +263,17 @@
 
   function renderReviewList() {
     if (!$("#timeline")) return;
-    $("#filters").innerHTML = ["全部", ...TAGS].map(t => {
-      const n = t === "全部" ? EV.length : EV.filter(e => e.tag === t).length;
+    const options = ["全部", ...TAGS];
+    // 收合後仍看得到正在使用的分類。
+    if (options.indexOf(filter) >= 5) { options.splice(options.indexOf(filter), 1); options.splice(4, 0, filter); }
+    $("#filters").innerHTML = options.map(t => {
+      const n = t === "全部" ? EV.length : EV.filter(e => tagsOf(e).includes(t)).length;
       return `<button class="chip" aria-pressed="${t === filter}" data-f="${t}">${t}<span class="n">${n}</span></button>`;
     }).join("");
     const locked = st.sent || CLOSED;
-    const list = EV.filter(e => filter === "全部" || e.tag === filter);
+    const list = EV.filter(e => filter === "全部" || tagsOf(e).includes(filter));
     const occ = list.flatMap(e => keyNews(e).map(n => ({ e, n })))
-      .sort((x, y) => x.n.date.localeCompare(y.n.date) || x.e.code.localeCompare(y.e.code));
+      .sort((x, y) => x.n.date.localeCompare(y.n.date) || Number(x.e.code) - Number(y.e.code));
     const months = [...new Set(occ.map(o => o.n.date.slice(0, 7)))];
     const seen = new Set();
     occ.forEach(o => { o.repeat = seen.has(o.e.code); seen.add(o.e.code); });
@@ -273,18 +292,18 @@
           if (repeat) return `<article class="ev repeat ${cls}">
             ${imgBtn(e)}
             <div class="ev-body">
-              <div class="ev-top"><span class="ev-code">${e.code}</span><span>${fmtD(n.date)}</span></div>
-              <h3><button class="more" style="text-decoration:none;font:inherit" data-open="${e.code}">${esc(e.title)}</button></h3>
+              <h3><time class="repeat-date" datetime="${n.date.replaceAll("/", "-")}">${fmtD(n.date)}</time> <span class="news-source" style="${mediaStyle(n.media)}">${esc(n.media)}</span> <button class="repeat-news" data-open="${e.code}">${esc(n.title)}</button></h3>
+              <p class="repeat-subtitle"><button class="repeat-review" data-open="${e.code}"><b>回看事件 ${e.code}｜</b><span class="repeat-event-title">${esc(e.title)}</span></button></p>
             </div>${pick}
           </article>`;
           const others = keyNews(e).filter(k => k !== n).map(k => monthLabel(k.date));
           return `<article class="ev ${cls}">
             ${imgBtn(e)}
             <div class="ev-body">
-              <div class="ev-top"><span class="ev-code">${e.code}</span><span class="tag t-${e.tag}">${e.tag}</span><span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">同一事件也出現在 ${others.join("、")}</span>` : ""}</div>
+              <div class="ev-top"><span class="ev-code">${e.code}</span>${tagsHTML(e)}<span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">相關事件也出現在${others.join("、")}</span>` : ""}</div>
               <h3>${esc(e.title)}</h3>
               <div class="sum">${paras(e.summary)}</div>
-              <button class="more" data-open="${e.code}">看完整回顧</button>
+              <button class="btn btn-dark btn-small" data-open="${e.code}">看完整回顧</button>
             </div>
             ${pick}
           </article>`;
@@ -417,14 +436,16 @@
         <div>
           <p class="small">從你圈的事件來看，你的司法關注類型是</p>
           <h3>${p.name}</h3>
-          <p>${p.text}</p>
+          <p>${esc(p.text)}</p>
+          <div class="persona-topics">${p.topics.map(t => `<span>${esc(t.topic)}</span>`).join("")}</div>
+          <p class="persona-note">依圈選事件的主題歸納，僅供趣味參考。</p>
           <div class="acts">
             <button class="btn btn-primary btn-small" id="cardBtn">製作我的年度大事圖卡</button>
             <button class="btn btn-ghost btn-small" id="shareBtn">分享文字</button>
           </div>
         </div>
       </div>
-      <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span><button class="more" style="text-decoration:none" data-open="${c}">${esc(byCode[c].title)}</button><small>${byCode[c].tag}｜${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
+      <ul class="mylist">${st.picks.map(c => `<li>${STAMP()}<span><button class="more" style="text-decoration:none" data-open="${c}">${esc(byCode[c].title)}</button><small>${esc(tagsText(byCode[c]))}｜${dateOf(byCode[c])}</small></span></li>`).join("")}</ul>
       ${announce}</div></section>`);
     $("#cardBtn").onclick = () => openShareCard(p);
     $("#shareBtn").onclick = shareText;
@@ -501,16 +522,16 @@
     x.fillStyle = "#1B2559"; x.fillRect(0, 0, W, H);
     x.fillStyle = "#FFCB47"; x.font = `700 42px ${HAND}`; x.fillText(`民間司改會｜${YEAR} 年度司法大事記`, 80, 150);
     x.fillStyle = "#FFFFFF"; x.font = `700 92px ${HAND}`; x.fillText(`我心中的 ${YEAR}`, 80, 270); x.fillText("司法大事", 80, 375);
-    x.font = `500 40px ${BODY}`;
+    x.font = `500 36px ${BODY}`;
     const rows = st.picks.map(c => ({ m: monthLabel(firstKey(byCode[c])), lines: wrapText(x, byCode[c].title, 640, 3) }));
-    const rowH = rows.map(r => r.lines.length * 56 + 56);
+    const rowH = rows.map(r => r.lines.length * 48 + 32);
     const paperY = 440, paperH = 40 + rowH.reduce((a, b) => a + b, 0) + 20;
     x.fillStyle = "#FFFFFF"; roundRect(x, 60, paperY, 960, paperH, 18); x.fill();
     let y = paperY + 30;
     rows.forEach((r, i) => {
-      x.fillStyle = "#D62839"; x.font = `700 40px ${HAND}`; x.fillText(r.m, 104, y + 70);
-      x.fillStyle = "#1B2559"; x.font = `500 40px ${BODY}`;
-      r.lines.forEach((ln, j) => x.fillText(ln, 220, y + 70 + j * 56));
+      x.fillStyle = "#D62839"; x.font = `700 40px ${HAND}`; x.fillText(r.m, 104, y + 54);
+      x.fillStyle = "#1B2559"; x.font = `500 36px ${BODY}`;
+      r.lines.forEach((ln, j) => x.fillText(ln, 220, y + 54 + j * 48));
       drawStamp(x, 940, y + rowH[i] / 2, 42);
       y += rowH[i];
       if (i < rows.length - 1) { x.strokeStyle = "#D3DAE2"; x.lineWidth = 2; x.beginPath(); x.moveTo(100, y); x.lineTo(980, y); x.stroke(); }
@@ -520,7 +541,7 @@
     x.font = `96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; x.textAlign = "center"; x.textBaseline = "middle";
     x.fillText(p.emoji, 170, py + 96); x.textAlign = "left"; x.textBaseline = "alphabetic";
     x.fillStyle = "rgba(255,255,255,.7)"; x.font = `500 36px ${BODY}`; x.fillText("我的司法關注類型", 300, py + 60);
-    x.fillStyle = "#FFFFFF"; x.font = `700 88px ${HAND}`; x.fillText(p.name, 300, py + 160);
+    x.fillStyle = "#FFFFFF"; x.font = `700 88px ${HAND}`; x.fillText(p.name, 300, py + 160, W - 380);
     x.fillStyle = "#FFCB47"; x.font = `700 52px ${HAND}`; x.fillText("一起回顧今年的司法大事", 80, H - 150);
     x.fillStyle = "rgba(255,255,255,.8)"; x.font = `500 36px ${BODY}`; x.fillText(url, 80, H - 90);
     drawStamp(x, 950, H - 140, 64);
@@ -544,57 +565,38 @@
     if (sb) sb.onclick = async () => { try { await navigator.share({ files: [file], text: `我心中的 ${YEAR} 司法大事` }); } catch (e) { } };
   }
 
-  /* ===================== 歷年回顧 ===================== */
-  function pageArchive() {
-    const years = Object.keys(DATA).sort((a, b) => b - a);
-    const year = years.includes(PARAMS.year) ? PARAMS.year : String(YEAR);
-    const D = DATA[year];
-    const demoVotes = c => 260 + ((parseInt(c, 10) * 7919) % 1180);
-    let body = "";
-    if (PARAMS.preview) {
-      const votes = {}; D.events.forEach(e => votes[e.code] = demoVotes(e.code));
-      const fakeJrf = [...D.events].sort((a, b) => ((+b.code * 37) % 23) - ((+a.code * 37) % 23)).map(e => e.code);
-      body = `<span class="preview-flag">版面示意：以下人數與司改會評選皆非真實結果</span>
-        <h3 class="sub" style="margin-top:0">${year} 年度十大司法事件</h3>${resultsBlock(D, votes, fakeJrf, [], year)}`;
-    } else if (D.status === "closed" && D.final) {
-      body = `<h3 class="sub" style="margin-top:0">${year} 年度十大司法事件</h3><p>共 ${D.final.voters.toLocaleString()} 人留下年度清單。</p>${resultsBlock(D, D.final.votes, D.jrfTop, [], year)}`;
-    } else {
-      body = `<div class="announce" style="border:0;padding:10px 0 20px"><div class="big">⏳</div><h3>${year} 年度結果將在 ${C.announce} 公布</h3><p>先來回顧這一年發生的事。</p></div>`;
-    }
-    const evs = [...D.events].sort((a, b) => firstKey(a).localeCompare(firstKey(b)));
-    body += `<h3 class="sub">${year} 年司法大事</h3>
-      <ul class="compact">${evs.map(e => `<li><span class="mm">${monthLabel(firstKey(e))}</span><span><button class="more" style="text-decoration:none" data-open="${e.code}" data-year="${year}">${esc(e.title)}</button><small>${e.tag}｜${dateOf(e)}</small></span></li>`).join("")}</ul>`;
-    if (!DEV) { /* 正式版不顯示設計預覽連結 */ }
-    else if (!PARAMS.preview) body += `<button class="dev-note" data-go="archive" data-year="${year}" data-preview="1" style="background:none;cursor:pointer">設計預覽：查看結果公布後的版面（上線前請刪除）</button>`;
-    else body += `<button class="dev-note" data-go="archive" data-year="${year}" style="background:none;cursor:pointer">回到目前版面</button>`;
-
-    main(`<div class="wrap page-head">
-        <h1 class="page-title">歷年回顧</h1>
-        <p class="page-sub">每一年的司法大事和年度結果都收在這裡。${YEAR} 年是第一年，之後會一年一年累積下來。</p>
-      </div>
-      <section style="padding-top:24px"><div class="wrap">
-        <div class="years" role="tablist">${years.map(y => `<button class="year-tab" role="tab" data-go="archive" data-year="${y}" aria-selected="${y === year}">${y}</button>`).join("")}</div>
-        <div class="panel">${body}</div>
-      </div></section>`);
-    animateBars($("#main"));
-  }
-
   /* ===================== 司法民調 ===================== */
   function pagePolls() {
     const P = window.JRF_POLLS;
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
-        <p class="page-sub">民眾怎麼看司法？這裡整理了不同單位的歷年司法民調，資料更新至 ${P.updated}。</p></div>
-      <section style="padding-top:24px"><div class="wrap"><p class="explain"><b>不同單位的民調不能直接比較。</b>2025 年司法院的調查中，信任法官的民眾接近六成；中正大學犯罪研究中心問的是「法官能不能公正審理刑事案件」，正面回答只有三成三。兩份調查的題目、調查期間和問卷內容都不一樣，建議比較同一單位歷年數字較準。</p></div></section>
-      <section style="padding-top:0"><div class="wrap"><h2 class="sec-title">長期追蹤</h2>
-        <p class="sec-sub">各項調查依主辦單位與題目分別呈現；比較前請留意調查方法及年度。</p>
-        <article class="card ccu-entry"><div><h3>臺灣民眾對司法與犯罪防制滿意度調查（2018-2025）</h3><p>國立中正大學犯罪研究中心及犯罪防治學系</p><a class="btn btn-ghost btn-small" href="#ccu-survey" data-go="ccu-survey">查看完整調查結果 →</a></div>${window.JRF_CCU_PAGE.preview()}</article>
-        <article class="card ccu-entry gvm-entry"><div><h3>遠見臺灣社會信任調查</h3><p>歷年法官、警察信任度，以及民眾對司法能否維護公平正義的評價。</p><a class="btn btn-ghost btn-small" href="#gvm-survey" data-go="gvm-survey">查看完整調查結果 →</a></div>${window.JRF_GVM_PAGE.preview()}</article>
-        <article class="card ccu-entry judicial-yuan-entry"><div><h3>司法院一般民眾對司法認知調查（105–114年）</h3><p>司法院｜法律觀念、司法信任與法院經驗等12項調查結果。</p><a class="btn btn-ghost btn-small" href="#judicial-yuan-survey" data-go="judicial-yuan-survey">查看完整調查結果 →</a></div>${window.JRF_JUDICIAL_PAGE.preview()}</article>
-        <article class="card ccu-entry tadels-entry"><div><h3>臺灣法律與社會變遷調查</h3><p>TaDELS｜2009–2024年九組司法信任與法律公平性題目。</p><a class="btn btn-ghost btn-small" href="#tadels-survey" data-go="tadels-survey">查看完整調查結果 →</a></div>${window.JRF_TADELS_PAGE.preview()}</article>
-        </div></section>`);
-    window.JRF_CCU_PAGE.bind($("#main"));
-    window.JRF_GVM_PAGE.bind($("#main"));
-    window.JRF_JUDICIAL_PAGE.bind($("#main"));
+        <div class="polls-intro">
+          <p>司法是否受到人民信任，長期以來一直是臺灣社會關注的議題。媒體報導與公共討論經常引用各種民意調查，呈現民眾對法官、法院及司法制度的不同評價。然而，不同調查的提問方式、調查對象與時間範圍各有差異，單看某一年度的數字，未必能充分理解民意的長期變化。</p>
+          <p>為了更完整地呈現臺灣民眾對司法的觀感，民間司法改革基金會整理不同機構公布的歷年調查結果，將相關數據與變化趨勢集中呈現，並保留原始資料來源，希望提供社會大眾一個更容易查詢、理解及檢視司法民意的參考平台。</p>
+        </div></div>
+      <section class="polls-reading"><div class="wrap"><h2 class="sec-title">如何閱讀這些民調？</h2>
+        <div class="polls-copy"><p>民意調查反映的是特定時間內，受訪民眾對司法及相關制度的認知與評價，不能直接等同司法運作或改革成效的客觀表現。民意的變化可能受到重大社會事件、媒體報導、調查方法等因素影響，因此不能僅憑數字升降，判斷司法改革是否成功。</p>
+        <p>儘管如此，長期累積的民調資料，仍有助於觀察社會對司法的態度及其變化，具有重要的公共討論與政策參考價值。閱讀時應留意各調查的題目、對象與方法差異，不宜直接比較不同機構的百分比。</p></div></div></section>
+      <section class="polls-directory"><div class="wrap"><h2 class="sec-title">歷年調查一覽</h2>
+        <div class="poll-directory-grid">
+          <a class="poll-directory-card" href="#judicial-yuan-survey" data-go="judicial-yuan-survey">
+            <span class="poll-directory-meta">司法院｜2016–2025 年</span><h3>一般民眾對司法認知調查</h3>
+            <p>司法信任、法官審判觀感、法院使用經驗及法律觀念。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 12 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
+          </a>
+          <a class="poll-directory-card" href="#tadels-survey" data-go="tadels-survey">
+            <span class="poll-directory-meta">臺灣法實證研究資料庫｜2009–2024 年</span><h3>臺灣法律與社會變遷調查</h3>
+            <p>法院與法律專業評價、法律公平性及大法官表現。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 9 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
+          </a>
+          <a class="poll-directory-card" href="#gvm-survey" data-go="gvm-survey">
+            <span class="poll-directory-meta">遠見臺灣社會信任調查｜2006–2024 年</span><h3>遠見臺灣社會信任調查</h3>
+            <p>法官與警察信任程度，以及司法公平正義的社會評價。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 3 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
+          </a>
+          <a class="poll-directory-card" href="#ccu-survey" data-go="ccu-survey">
+            <span class="poll-directory-meta">國立中正大學犯罪研究中心｜2018–2025 年</span><h3>臺灣民眾對司法與犯罪防制滿意度調查</h3>
+            <p>刑事審判公正性、治安與警政、犯罪防制及死刑議題。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 6 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
+          </a>
+        </div>
+        <p class="polls-maintenance">各年度的原始問卷、調查結果及資料來源，詳見各調查頁面。<br>資料最後整理日期：${P.updated}</p>
+      </div></section>`);
   }
 
   function pageCcuSurvey() {
@@ -648,7 +650,7 @@
       </div></section>`);
   }
 
-  const PAGES = { home: pageHome, review: pageReview, result: pageResult, archive: pageArchive, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
+  const PAGES = { home: pageHome, review: pageReview, result: pageResult, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
   go(pageFromHash(), {}, true);

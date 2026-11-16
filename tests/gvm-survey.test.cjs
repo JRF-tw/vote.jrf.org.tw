@@ -104,7 +104,7 @@ test('pointer, touch and keyboard show only the selected year and percentage', (
   assert.equal(prevented,3);
 });
 
-test('shared card format, headings and judge preview integrate under judicial polls', () => {
+test('shared survey pages remain available while the polls landing page uses directory cards', () => {
   const html = page.render();
   assert.equal((html.match(/<h2 class="sec-title">歷年調查結果<\/h2>/g)||[]).length,1);
   assert.ok(!html.includes('<h2 class="sec-title">司法能否維護公平正義'));
@@ -122,6 +122,12 @@ test('shared card format, headings and judge preview integrate under judicial po
   const app = fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');
   const nav = app.match(/const NAV = (.*);/)[1];
   assert.ok(!nav.includes('gvm-survey'));
-  assert.ok(app.includes('window.JRF_GVM_PAGE.preview()'));
+  assert.ok(app.includes('poll-directory-card'));
+  assert.ok(!app.includes('window.JRF_GVM_PAGE.preview()'));
+  assert.equal((app.match(/class="poll-directory-card"/g)||[]).length,4);
+  assert.ok(app.includes('節錄 12 組指標'));
+  assert.ok(app.includes('節錄 9 組指標'));
+  assert.ok(app.includes('節錄 3 組指標'));
+  assert.ok(app.includes('節錄 6 組指標'));
   assert.ok(app.includes('["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls"'));
 });
