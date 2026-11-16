@@ -105,7 +105,7 @@ section{padding:28px 0 56px}
 .month-events{display:grid;gap:16px}
 .ev{display:grid;grid-template-columns:240px 1fr 104px;grid-template-areas:"img body pick";background:var(--surface);border:2px solid var(--line);border-radius:18px;overflow:hidden;transition:border-color .2s}
 .ev.picked{border-color:var(--stamp)}
-.ev-body{grid-area:body;padding:20px 22px 20px 0}
+.ev-body{grid-area:body;padding:20px 22px 20px 0;align-self:start}
 .ev-image{grid-area:img;padding:20px;min-width:0;align-self:start}
 .ev-img-btn{display:block;width:100%;border:0;background:none;padding:0}
 .ev-pick{grid-area:pick}
@@ -335,7 +335,7 @@ dialog .draft-note{font-size:14px;color:var(--muted);border-left:3px solid var(-
 .compact small{display:block;color:var(--muted);font-size:13px}
 
 /* 圖片與預留框 */
-.pic{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:12px;background:var(--surface-2)}
+.pic{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:12px;background:transparent}
 .pic.ratio-original{height:auto;aspect-ratio:auto;object-fit:contain}
 .pic.ratio-2-3,.pic-ph.ratio-2-3{aspect-ratio:2/3}
 .pic.ratio-4-5,.pic-ph.ratio-4-5{aspect-ratio:4/5}
@@ -433,6 +433,7 @@ a.source-tag:hover{text-decoration:underline;text-underline-offset:3px}
 .ev.repeat{background:#E4E7EC;border-color:#CDD2DA;grid-template-columns:160px 1fr 104px}
 .ev.repeat .ev-image{padding:14px}
 .ev.repeat .pic,.ev.repeat .pic-ph{filter:grayscale(1);opacity:.75}
+.ev.repeat .pic{aspect-ratio:3/2;height:auto;object-fit:cover}
 .ev.repeat .pic-ph{font-size:12px}
 .ev.repeat .ev-body{padding:14px 18px 14px 0;align-self:center}
 .ev.repeat h3{font-size:17px;margin:0 0 6px}

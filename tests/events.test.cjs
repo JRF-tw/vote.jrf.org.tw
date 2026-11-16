@@ -36,11 +36,11 @@ function setup(storage = {}) {
   return { ...context.window, element };
 }
 
-test('new dataset contains all 27 events, 47 used tags, images and 116 timeline entries', () => {
+test('new dataset contains all 27 events, 18 used tags, images and 116 timeline entries', () => {
   const { JRF_DATA, JRF_TAGS, JRF_EVENT_TOPICS } = setup();
   const events = JRF_DATA[2026].events;
   assert.deepEqual(Array.from(events, e => e.code), Array.from({ length: 27 }, (_, i) => String(i + 1)));
-  assert.equal(JRF_TAGS.length, 47);
+  assert.equal(JRF_TAGS.length, 18);
   assert.equal(events.reduce((n, e) => n + e.news.length, 0), 116);
   assert.equal(events.flatMap(e => e.news).filter(n => !n.url).length, 0);
   const covered = JRF_EVENT_TOPICS.groups.flatMap(g => g.tags);
@@ -136,11 +136,11 @@ test('personas weight events equally, deduplicate a topic and handle ties indepe
   const { JRF_EVENT_TOPICS: topics, test: app } = setup();
   const persona = topics.personaOf;
   assert.equal(persona([]), null);
-  assert.equal(persona([{ tags: ['冤案救援', '證據法則', '再審'] }]).name, '冤案追問者');
-  const multi = [{ tags: ['人權保障', '憲法法庭', '憲政爭議', '權力分立'] }];
+  assert.equal(persona([{ tags: ['冤案救援', '冤案救援'] }]).name, '冤案追問者');
+  const multi = [{ tags: ['性別平等', '憲法法庭', '憲政爭議', '憲政爭議'] }];
   assert.equal(persona(multi).name, '多元關注者');
   assert.equal(persona(multi).topics[0].score, 0.5);
-  const choices = [...multi, { tags: ['人權保障'] }];
+  const choices = [...multi, { tags: ['性別平等'] }];
   assert.equal(persona(choices).name, '人權守護者');
   assert.equal(persona([...choices].reverse()).name, '人權守護者');
   assert.equal(app.personaOf(['2', '26']).name, '冤案追問者');
@@ -203,6 +203,8 @@ test('repeat cards place media before the headline and integrate numbered event 
       assert.ok(card.indexOf(`>${escape(n.media)}</span>`) < card.indexOf('class="repeat-news"'));
       assert.ok(card.includes(`<button class="repeat-review" data-open="${e.code}"><b>回看事件 ${e.code}｜</b><span class="repeat-event-title">${escape(e.title)}</span>`));
       assert.ok(!card.includes('class="btn btn-dark btn-small"'));
+      assert.ok(!card.includes('pic-source'));
+      assert.match(card, /class="pic ratio-3-2"/);
     }
   }
   assert.equal(repeatCards.length, expected);
@@ -210,4 +212,30 @@ test('repeat cards place media before the headline and integrate numbered event 
     JRF_DATA[2026].events.length);
   assert.ok(!html.includes('pic-credit'));
   assert.match(html, /<\/button><p class="pic-source"><(?:a|span) class="source-tag"/);
+});
+
+test('image height budget subtracts the credit and padding and updates when the text card resizes', () => {
+  let bodyHeight = 240, onResize;
+  const img = { style: {}, clientWidth: 200, naturalWidth: 200, naturalHeight: 400, complete: true };
+  const body = { getBoundingClientRect: () => ({ height: bodyHeight }) };
+  const credit = { getBoundingClientRect: () => ({ height: 34 }) };
+  const frame = { querySelector: selector => selector === 'img.pic' ? img : credit };
+  const card = { querySelector: selector => selector === '.ev-body' ? body : selector === '.ev-image' ? frame : selector === '.pic-source' ? credit : img };
+  const source = fs.readFileSync(path.join(root, 'assets/app.js'), 'utf8');
+  const context = vm.createContext({
+    document: { querySelectorAll: () => [card] },
+    ResizeObserver: class { constructor(callback) { onResize = callback; } observe() {} disconnect() {} },
+    getComputedStyle: node => node === frame ? { paddingTop: '20px', paddingBottom: '20px' }
+      : node === credit ? { marginTop: '6px', marginBottom: '0px' } : { aspectRatio: 'auto' }
+  });
+  vm.runInContext(source.slice(source.indexOf('  let eventImageObserver;'), source.indexOf('  const expandedTagLists')), context);
+  context.fitEventImages();
+  assert.equal(img.style.maxHeight, '160px');
+  assert.equal(img.style.objectFit, 'contain');
+  bodyHeight = 280;
+  onResize();
+  assert.equal(img.style.maxHeight, '200px');
+  img.naturalHeight = 100;
+  onResize();
+  assert.equal(img.style.objectFit, '');
 });

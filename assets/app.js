@@ -51,6 +51,36 @@
   const tagsHTML = e => tagsOf(e).map(t => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join("");
   const tagsText = e => tagsOf(e).join("／");
   const personaOf = codes => TOPICS.personaOf(codes.map(c => byCode[c]).filter(Boolean));
+  let eventImageObserver;
+  function fitEventImages() {
+    if (typeof ResizeObserver === "undefined") return;
+    if (eventImageObserver) eventImageObserver.disconnect();
+    const cards = [...document.querySelectorAll("#timeline .ev")];
+    const fit = () => cards.forEach(card => {
+      const body = card.querySelector(".ev-body"), frame = card.querySelector(".ev-image");
+      const img = frame && frame.querySelector("img.pic");
+      if (!body || !img) return;
+      const credit = frame.querySelector(".pic-source");
+      const padding = getComputedStyle(frame);
+      const creditStyle = credit && getComputedStyle(credit);
+      const creditHeight = credit ? credit.getBoundingClientRect().height + parseFloat(creditStyle.marginTop) + parseFloat(creditStyle.marginBottom) : 0;
+      const available = Math.max(0, body.getBoundingClientRect().height - parseFloat(padding.paddingTop) - parseFloat(padding.paddingBottom) - creditHeight);
+      img.style.maxHeight = `${available}px`;
+      // 限高時完整縮放圖片，避免裁掉直式圖的內容。
+      const ratio = getComputedStyle(img).aspectRatio.split("/").map(Number);
+      const naturalRatio = img.naturalWidth / img.naturalHeight;
+      const displayRatio = ratio.length === 2 && ratio.every(Number.isFinite) ? ratio[0] / ratio[1] : naturalRatio;
+      img.style.objectFit = card.classList?.contains("repeat") ? "cover" : img.clientWidth / displayRatio > available ? "contain" : "";
+    });
+    eventImageObserver = new ResizeObserver(fit);
+    cards.forEach(card => {
+      eventImageObserver.observe(card.querySelector(".ev-body"));
+      const credit = card.querySelector(".pic-source"), img = card.querySelector("img.pic");
+      if (credit) eventImageObserver.observe(credit);
+      if (img && !img.complete) img.addEventListener("load", fit, { once: true });
+    });
+    fit();
+  }
   const expandedTagLists = new Set();
   const tagToggleHTML = id => `<div class="tag-toggle-row"><button class="more tag-toggle" data-toggle-tags="${id}" aria-controls="${id}" aria-expanded="${expandedTagLists.has(id)}">${expandedTagLists.has(id) ? "收合標籤" : "展開全部標籤"}</button></div>`;
   function toggleTagList(id) {
@@ -68,6 +98,7 @@
   const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度結果"], ["polls", "司法民調"], ["about", "關於"]];
   const pageFromHash = () => (location.hash.slice(1) || "home").split("?")[0];
   function go(page, params, fromHistory) {
+    if (eventImageObserver) eventImageObserver.disconnect();
     PAGE = Object.hasOwn(PAGES, page) ? page : "home";
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
@@ -150,7 +181,7 @@
     : DEV ? `<span class="pic-ph ${imageRatioClass(e)}"><span><b>🖼</b>圖片預留<br>建議 ${imageRatio(e)}</span></span>` : `<span class="pic-ph pic-empty ${imageRatioClass(e)}">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
-  const imgBtn = e => hasPic(e) ? `<div class="ev-image"><button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(e)}</button>${picCredit(e)}</div>` : "";
+  const imgBtn = (e, repeat = false) => hasPic(e) ? `<div class="ev-image"><button class="ev-img-btn" data-open="${e.code}" aria-label="看完整回顧：${esc(e.title)}">${picHTML(repeat ? { ...e, imageRatio: "3:2" } : e)}</button>${repeat ? "" : picCredit(e)}</div>` : "";
   const picCredit = e => {
     if (!e.image || !e.imageSource || !e.imageSource.some(Boolean)) return "";
     const [name, url] = e.imageSource;
@@ -290,7 +321,7 @@
             </button>`;
           const cls = `${on ? "picked" : ""} ${hasPic(e) ? "" : "noimg"}`;
           if (repeat) return `<article class="ev repeat ${cls}">
-            ${imgBtn(e)}
+            ${imgBtn(e, true)}
             <div class="ev-body">
               <h3><time class="repeat-date" datetime="${n.date.replaceAll("/", "-")}">${fmtD(n.date)}</time> <span class="news-source" style="${mediaStyle(n.media)}">${esc(n.media)}</span> <button class="repeat-news" data-open="${e.code}">${esc(n.title)}</button></h3>
               <p class="repeat-subtitle"><button class="repeat-review" data-open="${e.code}"><b>回看事件 ${e.code}｜</b><span class="repeat-event-title">${esc(e.title)}</span></button></p>
@@ -310,6 +341,7 @@
         }).join("")}</div>
       </div>`;
     }).join("");
+    fitEventImages();
   }
 
   function togglePick(code) {
