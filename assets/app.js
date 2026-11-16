@@ -47,6 +47,8 @@
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600);
   }
   const tagsOf = TOPICS.tagsOf;
+  const tagCounts = Object.fromEntries(TAGS.map(tag => [tag, EV.filter(e => tagsOf(e).includes(tag)).length]));
+  const rankedTags = [...TAGS].sort((a, b) => tagCounts[b] - tagCounts[a]);
   const tagClass = tag => `t-tone-${Math.max(0, TOPICS.groupOf(tag))}`;
   const tagsHTML = (e, interactive = false) => tagsOf(e).map(t => interactive
     ? `<button type="button" class="tag tag-filter ${tagClass(t)}" data-f="${esc(t)}" aria-pressed="${filter === t}" aria-label="${filter === t ? "取消篩選" : "篩選"}：${esc(t)}">${esc(t)}</button>`
@@ -93,6 +95,7 @@
     const button = document.querySelector(`[data-toggle-tags="${id}"]`);
     button.setAttribute("aria-expanded", String(expanded));
     button.textContent = expanded ? "收合標籤" : "展開全部標籤";
+    if (id === "filters") renderReviewList();
   }
 
   /* ---------- 分頁切換 ---------- */
@@ -265,7 +268,7 @@
       <section><div class="wrap">
         <h2 class="sec-title">依主題回顧</h2>
         <p class="sec-sub">依事件標籤探索今年的司法大事；同一事件可以有多個標籤。</p>
-        <div class="topics tag-options${expandedTagLists.has("homeTopics") ? " expanded" : ""}" id="homeTopics">${[...TAGS].sort((a, b) => EV.filter(e => tagsOf(e).includes(b)).length - EV.filter(e => tagsOf(e).includes(a)).length).map(t => `<button class="topic ${tagClass(t)}" data-go="review" data-tag="${t}"><b>${t}</b><span>${EV.filter(e => tagsOf(e).includes(t)).length} 件事件</span></button>`).join("")}</div>
+        <div class="topics tag-options${expandedTagLists.has("homeTopics") ? " expanded" : ""}" id="homeTopics">${rankedTags.map(t => `<button class="topic ${tagClass(t)}" data-go="review" data-tag="${t}"><b>${t}</b><span>${tagCounts[t]} 件事件</span></button>`).join("")}</div>
         ${tagToggleHTML("homeTopics")}
       </div></section>
 
@@ -325,12 +328,12 @@
 
   function renderReviewList() {
     if (!$("#timeline")) return;
-    const options = ["全部", ...TAGS];
+    const options = ["全部", ...rankedTags];
     // 收合後仍看得到正在使用的分類。
-    if (options.indexOf(filter) >= 5) { options.splice(options.indexOf(filter), 1); options.splice(4, 0, filter); }
+    if (!expandedTagLists.has("filters") && options.indexOf(filter) >= 5) { options.splice(options.indexOf(filter), 1); options.splice(4, 0, filter); }
     $("#filters").innerHTML = options.map(t => {
-      const n = t === "全部" ? EV.length : EV.filter(e => tagsOf(e).includes(t)).length;
-      return `<button class="chip" aria-pressed="${t === filter}" data-f="${t}">${t}<span class="n">${n}</span></button>`;
+      const n = t === "全部" ? EV.length : tagCounts[t];
+      return `<button class="chip${t === "全部" ? "" : ` ${tagClass(t)}`}" aria-pressed="${t === filter}" data-f="${t}">${t}<span class="n">${n}</span></button>`;
     }).join("");
     const locked = st.sent || CLOSED;
     const list = EV.filter(e => filter === "全部" || tagsOf(e).includes(filter));

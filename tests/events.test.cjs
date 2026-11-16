@@ -282,6 +282,25 @@ test('missing news URLs, image credits, images and full reviews use supported fa
   assert.ok(html.includes('<p>以摘要作為回顧</p>'));
 });
 
+test('updated topic membership gives filters and event tags matching color families', () => {
+  const { JRF_EVENT_TOPICS: topics, test: app, element } = setup();
+  const expected = {
+    '羈押與防逃': '重大事件與刑事政策',
+    '偵查不公開': '重大事件與刑事政策',
+    '冤案救援': '重大事件與刑事政策',
+    '新興科技': '司法制度與資源'
+  };
+  assert.ok(topics.groups.every(group => group.tags.length > 0));
+  app.go('review');
+  for (const [tag, topic] of Object.entries(expected)) {
+    const index = topics.groupOf(tag);
+    assert.equal(topics.groups[index].topic, topic);
+    app.toggleFilter(tag);
+    assert.ok(element('#filters').innerHTML.includes(`class="chip t-tone-${index}" aria-pressed="true" data-f="${tag}"`));
+    assert.ok(element('#timeline').innerHTML.includes(`class="tag tag-filter t-tone-${index}" data-f="${tag}" aria-pressed="true"`));
+  }
+});
+
 test('personas weight events equally, deduplicate groups and handle ties independently of pick order', () => {
   const { JRF_EVENT_TOPICS: topics, test: app, events } = setup();
   const [first, second] = topics.groups.filter(group => group.tags.length);
@@ -295,6 +314,21 @@ test('personas weight events equally, deduplicate groups and handle ties indepen
   assert.equal(persona(choices).name, second.name);
   assert.equal(persona([...choices].reverse()).name, second.name);
   for (const event of events) assert.ok(app.personaOf([event.code]).name);
+});
+
+test('topic filters sort by event count, counting repeated timeline appearances only once', () => {
+  const { test: app, element, JRF_TAGS, events } = setup();
+  const counts = tag => events.filter(event => event.tags.includes(tag)).length;
+  const expected = [...JRF_TAGS].sort((a, b) => counts(b) - counts(a));
+  const filterTags = () => [...element('#filters').innerHTML.matchAll(/data-f="([^"]+)"/g)].map(match => match[1]);
+  app.go('review');
+  assert.deepEqual(filterTags(), ['全部', ...expected]);
+  app.toggleTagList('filters');
+  app.toggleFilter(expected.at(-1));
+  assert.deepEqual(filterTags(), ['全部', ...expected]);
+  for (const tag of expected) {
+    assert.ok(element('#filters').innerHTML.includes(`data-f="${tag}">${tag}<span class="n">${counts(tag)}</span>`));
+  }
 });
 
 test('tag lists start collapsed and keep the selected tag visible after collapse', () => {
