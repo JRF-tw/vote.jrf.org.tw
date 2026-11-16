@@ -61,7 +61,7 @@ test('new dataset contains all 27 events, 47 used tags, images and 116 timeline 
   });
   assert.equal(ordered.length, 27);
   for (const e of ordered) assert.equal(e.image, `images/2026/${e.code.padStart(2, '0')}.png`);
-  assert.ok(events.find(e => e.code === '10').image);
+  assert.ok(events.find(e => e.wordCode === '15').image);
 });
 
 test('new ballot version ignores old test votes and preserves duplicate-vote protection for this round', () => {
@@ -121,14 +121,14 @@ test('details preserve full text and missing sources stay plain text without inv
     assert.equal((html.match(/<li class="key">/g) || []).length, e.news.filter(n => n.key).length);
     assert.equal((html.match(/class="tag /g) || []).length, e.tags.length);
   }
-  app.openDetail('13');
+  app.openDetail('14');
   assert.match(element('#dlgInner').innerHTML, /class="source-tag">圖片來源：民間司改會<\/span>/);
-  app.openDetail('22');
+  app.openDetail('4');
   assert.match(element('#dlgInner').innerHTML, /href="https:\/\/news.tvbs.com.tw\/local\/4031274"/);
   assert.match(element('#dlgInner').innerHTML, /西門町知名BDSM酒吧遭突襲搜索　負責人遭帶走爆執法爭議/);
-  for (const code of ['16']) {
+  for (const code of ['17']) {
     app.openDetail(code);
-    assert.ok(element('#dlgInner').innerHTML.includes('src="images/2026/16.png"'));
+    assert.ok(element('#dlgInner').innerHTML.includes('src="images/2026/17.png"'));
   }
 });
 
@@ -164,7 +164,7 @@ test('tag lists start collapsed, expand accessibly and keep the active tag visib
   assert.match(element('#main').innerHTML, /class="topics tag-options"/);
 });
 
-test('portrait previews retain native proportions and the restored AI picture uses chronological number 10', () => {
+test('portrait previews retain native proportions and the restored AI picture uses chronological number 11', () => {
   const { test: app, element, JRF_DATA } = setup();
   const events = JRF_DATA[2026].events;
   for (const e of events.filter(e => e.image)) {
@@ -176,9 +176,9 @@ test('portrait previews retain native proportions and the restored AI picture us
     assert.ok(element('#timeline').innerHTML.includes(`class="pic ratio-original" src="${e.image}"`));
   }
   const ai = events.find(e => e.title.startsWith('司法機關導入生成式AI'));
-  assert.equal(ai.code, '10');
+  assert.equal(ai.code, '11');
   app.openDetail(ai.code);
-  assert.match(element('#dlgInner').innerHTML, /src="images\/2026\/10.png"/);
+  assert.match(element('#dlgInner').innerHTML, /src="images\/2026\/11.png"/);
 });
 
 test('repeat cards place media before the headline and integrate numbered event review into the subtitle', () => {

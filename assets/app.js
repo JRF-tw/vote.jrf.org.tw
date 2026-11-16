@@ -188,9 +188,9 @@
   function pageHome() {
     const figures = [
       ["6.7 倍", "2025年法院使用323件，較2024年的48件增加至6.7倍。", "3"],
-      ["2 / 71", "新北地院書記官缺71人僅2人報到。", "11"],
+      ["2 / 71", "新北地院書記官缺71人僅2人報到。", "12"],
       ["14 年", "2026年5月，高院裁定開始再審，10月1日改判無罪，11月2日無罪確定，歷時14年的冤案終獲平反。", "26"],
-      ["20 歲", "刑法三讀修正　兒少性侵案被害人20歲前不計追訴期", "15"]
+      ["20 歲", "刑法三讀修正　兒少性侵案被害人20歲前不計追訴期", "16"]
     ];
     main(`
       <section class="hero"><div class="wrap">
@@ -201,7 +201,7 @@
         </div>
         <div class="ballot" aria-hidden="true">
           <div class="ballot-head">${YEAR} 司法大事記</div>
-          ${["1", "7", "10", "26"].map(code => {
+          ${["1", "8", "11", "26"].map(code => {
             const e = byCode[code];
             return `<div class="ballot-row"><span>${monthLabel(firstKey(e))}</span><span>${esc(e.title)}</span><span class="slot"></span></div>`;
           }).join("")}
