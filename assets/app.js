@@ -48,7 +48,9 @@
   }
   const tagsOf = TOPICS.tagsOf;
   const tagClass = tag => `t-tone-${Math.max(0, TOPICS.groupOf(tag))}`;
-  const tagsHTML = e => tagsOf(e).map(t => `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join("");
+  const tagsHTML = (e, interactive = false) => tagsOf(e).map(t => interactive
+    ? `<button type="button" class="tag tag-filter ${tagClass(t)}" data-f="${esc(t)}" aria-pressed="${filter === t}" aria-label="${filter === t ? "取消篩選" : "篩選"}：${esc(t)}">${esc(t)}</button>`
+    : `<span class="tag ${tagClass(t)}">${esc(t)}</span>`).join("");
   const tagsText = e => tagsOf(e).join("／");
   const personaOf = codes => TOPICS.personaOf(codes.map(c => byCode[c]).filter(Boolean));
   let eventImageObserver;
@@ -95,7 +97,7 @@
 
   /* ---------- 分頁切換 ---------- */
   let PAGE = "home", PARAMS = {};
-  const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度結果"], ["polls", "司法民調"], ["about", "關於"]];
+  const NAV = [["review", `票選${YEAR}年司法大事`], ["result", "年度票選結果"], ["polls", "司法民調"], ["about", "關於"]];
   const pageFromHash = () => (location.hash.slice(1) || "home").split("?")[0];
   function go(page, params, fromHistory) {
     if (eventImageObserver) eventImageObserver.disconnect();
@@ -164,7 +166,7 @@
       const u = ev.target.closest("[data-unpick]"); if (u) return togglePick(u.dataset.unpick);
       const p = ev.target.closest("[data-pick]"); if (p) return togglePick(p.dataset.pick);
       const o = ev.target.closest("[data-open]"); if (o) return openDetail(o.dataset.open, o.dataset.year);
-      const f = ev.target.closest("[data-f]"); if (f) { filter = f.dataset.f; renderReviewList(); }
+      const f = ev.target.closest("[data-f]"); if (f) toggleFilter(f.dataset.f);
     });
   }
   const main = html => { $("#main").innerHTML = html; };
@@ -226,7 +228,7 @@
     main(`
       <section class="hero"><div class="wrap">
         <div>
-          <h1>${YEAR}，<br>司法圈發生了什麼事？</h1>
+          <h1>${YEAR}，<br>發生了哪些司法大事？</h1>
           <p class="lead">我們整理了今年 ${EV.length} 件重要的司法事件，邀你一起閱讀事件摘要、完整回顧與新聞時間軸，圈選心中的年度司法大事。</p>
           <button class="btn btn-primary" data-go="review">開始回顧</button>
         </div>
@@ -272,6 +274,11 @@
 
   /* ===================== 大事記 ===================== */
   let filter = "全部";
+  function toggleFilter(tag) {
+    if (tag !== "全部" && !TAGS.includes(tag)) return;
+    filter = filter === tag ? "全部" : tag;
+    renderReviewList();
+  }
   function pageReview() {
     filter = PARAMS.tag || "全部";
     let notice = "";
@@ -317,7 +324,7 @@
         <div class="month-events">${items.map(({ e, n, repeat }) => {
           const on = st.picks.includes(e.code);
           const pick = `<button class="ev-pick" data-pick="${e.code}" aria-pressed="${on}" ${locked ? "disabled" : ""} aria-label="${on ? "取消圈選" : "圈選"}：${esc(e.title)}">
-              <span class="ring">${STAMP()}</span>${locked ? (on ? "我圈的" : "") : (on ? "已圈" : "圈選")}
+              <span class="ring">${STAMP()}</span><span class="pick-label">${locked ? (on ? "我圈的" : "") : (on ? "已圈" : "圈選")}</span>
             </button>`;
           const cls = `${on ? "picked" : ""} ${hasPic(e) ? "" : "noimg"}`;
           if (repeat) return `<article class="ev repeat ${cls}">
@@ -331,7 +338,7 @@
           return `<article class="ev ${cls}">
             ${imgBtn(e)}
             <div class="ev-body">
-              <div class="ev-top"><span class="ev-code">${e.code}</span>${tagsHTML(e)}<span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">相關事件也出現在${others.join("、")}</span>` : ""}</div>
+              <div class="ev-top"><span class="ev-code">${e.code}</span>${tagsHTML(e, true)}<span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">相關事件也出現在${others.join("、")}</span>` : ""}</div>
               <h3>${esc(e.title)}</h3>
               <div class="sum">${paras(e.summary)}</div>
               <button class="btn btn-dark btn-small" data-open="${e.code}">看完整回顧</button>
@@ -348,7 +355,16 @@
     if (st.sent || CLOSED) return;
     if (st.picks.includes(code)) st.picks = st.picks.filter(p => p !== code);
     else st.picks.push(code);
-    save(); renderReviewList(); renderTray();
+    save();
+    const on = st.picks.includes(code);
+    // 只更新該事件的所有圈選入口，保留卡片、圖片尺寸與鍵盤焦點。
+    document.querySelectorAll(`#timeline .ev-pick[data-pick="${code}"]`).forEach(button => {
+      button.closest(".ev").classList.toggle("picked", on);
+      button.setAttribute("aria-pressed", String(on));
+      button.setAttribute("aria-label", `${on ? "取消圈選" : "圈選"}：${byCode[code].title}`);
+      button.querySelector(".pick-label").textContent = on ? "已圈" : "圈選";
+    });
+    renderTray();
   }
 
   function renderTray() {
@@ -445,7 +461,7 @@
     }
   }
 
-  /* ===================== 年度結果 ===================== */
+  /* ===================== 年度票選結果 ===================== */
   function pageResult() {
     if (PUBLISHED) {
       main(`<div class="wrap page-head"><h1 class="page-title">${YEAR} 年度十大司法事件</h1>
@@ -455,10 +471,10 @@
       return;
     }
     const p = st.sent ? personaOf(st.picks) : null;
-    const head = `<div class="wrap page-head"><h1 class="page-title">${st.sent ? `我心中的 ${YEAR} 司法大事` : `${YEAR} 年度結果`}</h1>
+    const head = `<div class="wrap page-head"><h1 class="page-title">${st.sent ? `我心中的 ${YEAR} 司法大事` : `${YEAR} 年度票選結果`}</h1>
       <p class="page-sub">${st.sent ? "謝謝你一起回顧這一年。這是你圈出的年度大事清單。" : `大家心中的年度大事，會在 ${C.announce} 和司改會評選一起公布。`}</p></div>`;
     const announce = `<div class="announce"><div class="big">⏳</div>
-        <h3>年度結果將在 ${C.announce} 公布</h3>
+        <h3>年度票選結果將在 ${C.announce} 公布</h3>
         <p>屆時會並列「大家心中的年度大事」與「司改會評選」，看看我們關心的地方有哪些相同、哪些不同。</p>
         ${st.sent ? "" : `<button class="btn btn-primary" data-go="review">先去回顧今年大事</button>`}</div>`;
     if (!p) { main(head + `<section style="padding-top:24px"><div class="wrap">${announce}</div></section>`); return; }
@@ -671,7 +687,7 @@
               <li>尚未判決確定的案件，被告依法推定無罪；列入大事記不代表司改會認定任何人有罪。</li>
               <li>事件圖片引用自各媒體報導，版權屬原媒體，出處標示於圖片下方；權利人如不同意使用，請與我們聯絡，我們會立即撤下。</li>
               <li>新聞連結的內容由各媒體負責。</li>
-              <li>年度結果是參與者自願圈選的統計，不是抽樣民調。</li>
+              <li>年度票選結果是參與者自願圈選的統計，不是抽樣民調。</li>
               <li>內容如有錯誤，歡迎透過司改會官網與我們聯絡。</li>
             </ol></div>
         </div>

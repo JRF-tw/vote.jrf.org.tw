@@ -6,7 +6,7 @@ const path = require('node:path');
 
 // Run the actual dialog and submission handlers with a simulated DOM and network.
 const source = fs.readFileSync(path.join(__dirname, '../assets/app.js'), 'utf8');
-const handlers = source.slice(source.indexOf('  function confirmList()'), source.indexOf('  /* ===================== 年度結果'));
+const handlers = source.slice(source.indexOf('  function confirmList()'), source.indexOf('  function pageResult()'));
 
 function setup(fetchImpl = async () => ({})) {
   const elements = Object.fromEntries(['#voterEmail', '#doSend', '#dlgBack', '#dlg'].map(id => [id, {

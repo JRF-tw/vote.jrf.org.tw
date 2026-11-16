@@ -13,9 +13,36 @@ const codeOf = html => html.match(/data-pick="([^"]+)"/)[1];
 
 function setup(storage = {}, options = {}) {
   const elements = new Map();
+  let timelineButtons = [];
+  const document = { querySelectorAll: selector => {
+    const match = selector.match(/^#timeline \.ev-pick\[data-pick="([^"]+)"\]$/);
+    return match ? timelineButtons.filter(button => button.dataset.pick === match[1]) : [];
+  }, addEventListener() {}, body: { dataset: {} }, activeElement: null };
   const element = id => {
     if (!elements.has(id)) elements.set(id, {
-      innerHTML: '', className: '', open: false, clientWidth: 100, offsetWidth: 100, scrollLeft: 0,
+      _html: '', writes: 0,
+      get innerHTML() { return this._html; },
+      set innerHTML(html) {
+        this._html = html;
+        this.writes++;
+        if (id !== '#timeline') return;
+        timelineButtons = articles(html).map(cardHTML => {
+          const classes = new Set(cardHTML.match(/class="([^"]+)"/)[1].split(/\s+/));
+          const card = { classList: {
+            toggle(name, on) { if (on) classes.add(name); else classes.delete(name); },
+            contains: name => classes.has(name)
+          } };
+          const buttonHTML = cardHTML.slice(cardHTML.indexOf('<button class="ev-pick"'));
+          const label = { textContent: buttonHTML.match(/class="pick-label">([^<]*)/)[1] };
+          const attributes = { 'aria-pressed': buttonHTML.match(/aria-pressed="([^"]+)"/)[1] };
+          return { dataset: { pick: codeOf(cardHTML) }, attributes,
+            closest: () => card, querySelector: () => label,
+            setAttribute(name, value) { attributes[name] = value; },
+            focus() { document.activeElement = this; }
+          };
+        });
+      },
+      className: '', open: false, clientWidth: 100, offsetWidth: 100, scrollLeft: 0,
       getBoundingClientRect() { return { left: 0 }; },
       setAttribute(name, value) { this[name] = value; },
       classList: { add() {}, remove() {}, toggle() {} },
@@ -23,10 +50,10 @@ function setup(storage = {}, options = {}) {
     });
     return elements.get(id);
   };
+  document.querySelector = element;
   const context = vm.createContext({
     window: { scrollTo() {} },
-    document: { querySelector: element, querySelectorAll: () => [],
-      addEventListener() {}, body: { dataset: {} } },
+    document,
     localStorage: { getItem: key => storage[key] ?? null, setItem(key, value) { storage[key] = value; } },
     location: { pathname: '/', search: '', hash: '' }, history: { pushState() {} },
     setTimeout, clearTimeout
@@ -64,8 +91,9 @@ function setup(storage = {}, options = {}) {
   const boot = appSource.lastIndexOf('  renderChrome();');
   assert.ok(boot >= 0, 'application bootstrap marker must exist');
   vm.runInContext(appSource.slice(0, boot) +
-    'window.test = {go, openDetail, togglePick, personaOf, toggleTagList, st}; })();', context);
-  return { ...context.window, element, events: data.events };
+    'window.test = {go, openDetail, togglePick, personaOf, toggleTagList, toggleFilter, st}; })();', context);
+  return { ...context.window, element, document, events: data.events,
+    buttonsFor: code => timelineButtons.filter(button => button.dataset.pick === code) };
 }
 
 function assertDate(value) {
@@ -145,17 +173,37 @@ test('each tag filters all matching events and the complete timeline follows pri
   assert.deepEqual(dates, Array.from(expected));
 });
 
-test('three occurrences share one selection and an unmarked event falls back to its first news item', () => {
-  const { test: app, element } = setup({}, { fixtures: true });
+test('selection updates all occurrences in place without rebuilding cards, filters or losing focus', () => {
+  const { test: app, element, document, buttonsFor } = setup({}, { fixtures: true });
   app.go('review');
-  let cards = articles(element('#timeline').innerHTML);
+  const cards = articles(element('#timeline').innerHTML);
   assert.deepEqual(cards.map(codeOf), ['1', '2', '1', '1']);
+  const buttons = buttonsFor('1'), other = buttonsFor('2')[0];
+  const timelineWrites = element('#timeline').writes, filterWrites = element('#filters').writes;
+  buttons[1].focus();
   app.togglePick('1');
   assert.deepEqual(Array.from(app.st.picks), ['1']);
-  cards = articles(element('#timeline').innerHTML).filter(card => codeOf(card) === '1');
-  assert.ok(cards.every(card => card.includes('data-pick="1" aria-pressed="true"')));
+  for (const button of buttons) {
+    assert.equal(button.attributes['aria-pressed'], 'true');
+    assert.ok(button.attributes['aria-label'].startsWith('取消圈選：'));
+    assert.equal(button.querySelector('.pick-label').textContent, '已圈');
+    assert.ok(button.closest('.ev').classList.contains('picked'));
+  }
+  assert.equal(document.activeElement, buttons[1]);
+  assert.equal(element('#timeline').writes, timelineWrites);
+  assert.equal(element('#filters').writes, filterWrites);
+  assert.equal(buttonsFor('1')[1], buttons[1]);
+  assert.equal(other.attributes['aria-pressed'], 'false');
   app.togglePick('1');
   assert.equal(app.st.picks.length, 0);
+  for (const button of buttons) {
+    assert.equal(button.attributes['aria-pressed'], 'false');
+    assert.equal(button.querySelector('.pick-label').textContent, '圈選');
+    assert.ok(!button.closest('.ev').classList.contains('picked'));
+  }
+  assert.equal(document.activeElement, buttons[1]);
+  assert.equal(element('#timeline').writes, timelineWrites);
+  assert.equal(element('#filters').writes, filterWrites);
 });
 
 test('details render current titles, full paragraphs and primary-news emphasis without the old badge', () => {
@@ -217,6 +265,32 @@ test('tag lists start collapsed and keep the selected tag visible after collapse
   assert.equal(element('[data-toggle-tags="filters"]')['aria-expanded'], 'false');
   const visible = [...element('#filters').innerHTML.matchAll(/data-f="([^"]+)"/g)].slice(0, 5).map(match => match[1]);
   assert.ok(visible.includes(JRF_TAGS.at(-1)));
+});
+
+test('results page uses the annual voting results label in its heading and browser title', () => {
+  const { test: app, element, document, JRF_CONFIG } = setup();
+  app.go('result');
+  assert.ok(element('#main').innerHTML.includes(`${JRF_CONFIG.year} 年度票選結果`));
+  assert.match(document.title, /^年度票選結果｜/);
+});
+
+test('event tags toggle the same filter as the toolbar without changing selected events', () => {
+  const { test: app, element, JRF_TAGS, events } = setup();
+  const tag = JRF_TAGS.find(value => events.some(event => !event.tags.includes(value)));
+  assert.ok(tag, 'use a tag that filters a subset of the current events');
+  app.go('review');
+  app.togglePick(events[0].code);
+  assert.ok(element('#timeline').innerHTML.includes(`data-f="${escape(tag)}" aria-pressed="false"`));
+  app.toggleFilter(tag);
+  const selected = element('#timeline').innerHTML;
+  const expected = events.filter(event => event.tags.includes(tag)).map(event => event.code);
+  assert.deepEqual([...new Set(articles(selected).map(codeOf))].sort(), Array.from(expected).sort());
+  assert.ok(selected.includes(`data-f="${escape(tag)}" aria-pressed="true" aria-label="取消篩選：${escape(tag)}"`));
+  assert.ok(element('#filters').innerHTML.includes(`aria-pressed="true" data-f="${tag}"`));
+  app.toggleFilter(tag);
+  assert.deepEqual([...new Set(articles(element('#timeline').innerHTML).map(codeOf))], Array.from(events, event => event.code));
+  assert.ok(element('#timeline').innerHTML.includes(`data-f="${escape(tag)}" aria-pressed="false"`));
+  assert.deepEqual(Array.from(app.st.picks), [events[0].code]);
 });
 
 test('repeat cards show the current news headline and open their event without a separate review button or image credit', () => {

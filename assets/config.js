@@ -6,7 +6,7 @@ window.JRF_CONFIG = {
   ballotVersion: "launch-1",               // 投票輪次；本次啟用新紀錄，不沿用測試紀錄。一般推送請勿更動。
   maxPicks: 5,                             // 每人最多送出幾件
   deadline: "2026-12-31T23:59:59+08:00",   // 圈選截止時間（過了就不能再送出）
-  announce: "2027 年 1 月",                 // 年度結果公布時間（顯示用文字）
+  announce: "2027 年 1 月",                 // 年度票選結果公布時間（顯示用文字）
   pollsUpdated: "2026/11/07",               // 司法民調目錄的資料整理日期
   siteUrl: "https://vote.jrf.org.tw/",     // 正式網址（分享圖卡會印出）
   logo: "images/JRF-Logo.png",             // 頁首左側網站 LOGO
