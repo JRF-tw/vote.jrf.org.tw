@@ -27,7 +27,7 @@
 | `index.html` | 網站入口 |
 | `assets/` | 程式、樣式與網站設定（`config.js`） |
 | `data/events.js` | 各年度事件、相關新聞與結果 |
-| `data/polls.js` | 其他司法民調資料 |
+| `assets/event-topics.js` | 事件標籤色彩與圈選後的關注類型 |
 | `data/ccu-survey.js` | 中正大學107–114年度六項調查數據、訪問資訊與來源 |
 | `assets/ccu-survey.js` | 中正大學調查專頁與預覽 |
 | `assets/survey-charts.js` | 調查共用圖卡、折線、標籤避讓與問法斷線 |
@@ -35,10 +35,32 @@
 | `assets/judicial-yuan-survey.js` | 司法院調查詳情（`/#judicial-yuan-survey`）、受訪資格說明與提示互動 |
 | `data/gvm-survey.js` | 遠見社會信任調查數據與各筆來源 |
 | `assets/gvm-survey.js` | 司法民調中的遠見調查詳情（`/#gvm-survey`）、法官信任度預覽與提示互動 |
+| `data/tadels-survey.js`、`assets/tadels-survey.js` | 臺灣法律與社會變遷調查資料與專頁 |
 | `images/` | 事件圖片與社群分享縮圖 |
-| `docs/部署說明.md` | 維護者用的部署、Google 表單設定與年度更新流程 |
+| `tests/` | 事件與投票的自動檢查 |
 
 本機預覽：在專案資料夾執行 `python3 -m http.server`，再打開 http://localhost:8000/。
+也可以使用 VS Code 的「預覽網站」工作，連接埠為 4173。
+
+## 圖片維護
+
+- 2026 年事件圖片放在 `images/2026/`，檔名對應網站事件編號並補兩位數，例如 `01.png`。事件依最早主要新聞日期排序；`wordCode` 保留匯入時的 Word 原始編號。
+- 圖片路徑填在 `data/events.js` 的 `image`；來源填在 `imageSource:["名稱","網址"]`。沒有來源網址時可留空，不自行補上推測的出處。
+- 首次出現的事件預設顯示 3:2 圖片；直式原圖可設定 `imageRatio:"original"`，也支援 `2:3`、`4:5`、`5:4`、`9:16`。圖片與來源總高度不超過文字區；重複事件使用橫式裁切，省略來源標籤。
+- 完整回顧彈窗保留圖片比例，最高 450px，來源標籤位於右下角。
+- 目前事件圖片保留匯入時的原始 PNG。新增圖片建議使用適當壓縮的 JPG 或 WebP；更換格式時同步更新事件路徑。
+- `images/JRF-Logo.png` 為網站標誌；`images/vote.svg` 為 SVG 網站圖示，`images/vote.png`（192×192）供 PNG 網站圖示與 Apple 觸控圖示共用。
+- `images/og-image.png`（1200×630）為社群分享縮圖。
+
+## 投票與部署維護
+
+- 網站設定集中在 `assets/config.js`：年度、每人最多圈選件數、截止日、公布時間、正式網址與 Google 表單欄位代號。
+- Google 表單接收網址使用 `googleForm.action`；圈選題與 Email 題的代號分別設定在 `picksEntry`、`emailEntry`。圈選題使用核取方塊，選項須與事件 `code` 完全相同，目前為 `1` 至 `28`，不補零，最多選取 5 件。
+- 表單不要求登入，不自動收集電子郵件；Email 由網站傳送至獨立簡答題。不要另加其他必填題目。
+- 網站依「年度＋`ballotVersion`」記住瀏覽器是否已投票。一般推送維持版本不變；只有確定重新開放一輪投票才更換版本，Google 表單既有回覆不會隨之刪除。
+- 背景請求完成不代表已確認寫入表單，實際收件須由管理者在回覆試算表確認。
+- 司法民調各專頁使用對應資料檔；目錄的資料整理日期設定在 `assets/config.js` 的 `pollsUpdated`。
+- GitHub Pages 使用根目錄部署；保留 `CNAME` 與 `.nojekyll`。網域、分享圖片或網站圖示變動時，同步檢查 `index.html`、`robots.txt` 與 `sitemap.xml`。
 
 ## 聯絡
 

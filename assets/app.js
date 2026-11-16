@@ -136,7 +136,7 @@
       </svg>
       <header class="topbar"><div class="wrap">
         <a class="brand" href="#" data-go="home" aria-label="回首頁">
-          <img class="brand-logo" src="${esc(C.logo || "images/jrf-logo.png")}" alt="民間司法改革基金會">
+          <img class="brand-logo" src="${esc(C.logo || "images/JRF-Logo.png")}" alt="民間司法改革基金會">
           <span>年度司法大事記<small>民間司法改革基金會</small></span>
         </a>
         <nav class="nav" aria-label="主要選單">${NAV.map(([k, t]) => `<a href="#${k}" data-go="${k}">${t}</a>`).join("")}</nav>
@@ -219,9 +219,9 @@
   function pageHome() {
     const figures = [
       ["6.7 倍", "2025年法院使用323件，較2024年的48件增加至6.7倍。", "3"],
-      ["2 / 71", "新北地院書記官缺71人僅2人報到。", "12"],
-      ["14 年", "2026年5月，高院裁定開始再審，10月1日改判無罪，11月2日無罪確定，歷時14年的冤案終獲平反。", "26"],
-      ["20 歲", "刑法三讀修正　兒少性侵案被害人20歲前不計追訴期", "16"]
+      ["2 / 71", "新北地院書記官缺71人僅2人報到。", "13"],
+      ["14 年", "2026年5月，高院裁定開始再審，10月1日改判無罪，11月2日無罪確定，歷時14年的冤案終獲平反。", "27"],
+      ["20 歲", "刑法三讀修正　兒少性侵案被害人20歲前不計追訴期", "17"]
     ];
     main(`
       <section class="hero"><div class="wrap">
@@ -232,7 +232,7 @@
         </div>
         <div class="ballot" aria-hidden="true">
           <div class="ballot-head">${YEAR} 司法大事記</div>
-          ${["1", "8", "11", "26"].map(code => {
+          ${["1", "8", "11", "27"].map(code => {
             const e = byCode[code];
             return `<div class="ballot-row"><span>${monthLabel(firstKey(e))}</span><span>${esc(e.title)}</span><span class="slot"></span></div>`;
           }).join("")}
@@ -599,7 +599,6 @@
 
   /* ===================== 司法民調 ===================== */
   function pagePolls() {
-    const P = window.JRF_POLLS;
     main(`<div class="wrap page-head"><h1 class="page-title">司法民調觀測站</h1>
         <div class="polls-intro">
           <p>司法是否受到人民信任，長期以來一直是臺灣社會關注的議題。媒體報導與公共討論經常引用各種民意調查，呈現民眾對法官、法院及司法制度的不同評價。然而，不同調查的提問方式、調查對象與時間範圍各有差異，單看某一年度的數字，未必能充分理解民意的長期變化。</p>
@@ -627,7 +626,7 @@
             <p>刑事審判公正性、治安與警政、犯罪防制及死刑議題。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 6 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
           </a>
         </div>
-        <p class="polls-maintenance">各年度的原始問卷、調查結果及資料來源，詳見各調查頁面。<br>資料最後整理日期：${P.updated}</p>
+        <p class="polls-maintenance">各年度的原始問卷、調查結果及資料來源，詳見各調查頁面。<br>資料最後整理日期：${esc(C.pollsUpdated)}</p>
       </div></section>`);
   }
 
