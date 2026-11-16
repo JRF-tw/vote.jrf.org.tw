@@ -15,6 +15,7 @@ function setup(storage = {}, options = {}) {
   const elements = new Map();
   let timelineButtons = [];
   const document = { querySelectorAll: selector => {
+    if (selector === '#dlgInner .d-pic img.pic') return options.dialogImages || [];
     const match = selector.match(/^#timeline \.ev-pick\[data-pick="([^"]+)"\]$/);
     return match ? timelineButtons.filter(button => button.dataset.pick === match[1]) : [];
   }, addEventListener() {}, body: { dataset: {} }, activeElement: null };
@@ -230,6 +231,26 @@ test('details render current titles, full paragraphs and primary-news emphasis w
     assert.equal((html.match(/<li class="key">/g) || []).length, event.news.filter(news => news.key).length);
     assert.equal((html.match(/class="tag /g) || []).length, event.tags.length);
   }
+});
+
+test('dialog image credits wait for image decoding and ignore replaced images', async () => {
+  let resolveDecode;
+  const classes = new Set();
+  const img = { isConnected: true, naturalWidth: 640,
+    decode: () => new Promise(resolve => { resolveDecode = resolve; }),
+    closest: () => ({ classList: { add: name => classes.add(name) } }) };
+  const { test: app } = setup({}, { dialogImages: [img] });
+  app.openDetail('1');
+  assert.equal(classes.has('image-ready'), false);
+  resolveDecode();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(classes.has('image-ready'), true);
+  classes.clear();
+  app.openDetail('2');
+  img.isConnected = false;
+  resolveDecode();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(classes.has('image-ready'), false);
 });
 
 test('missing news URLs, image credits, images and full reviews use supported fallbacks', () => {

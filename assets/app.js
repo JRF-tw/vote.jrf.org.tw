@@ -170,7 +170,21 @@
     });
   }
   const main = html => { $("#main").innerHTML = html; };
-  function openDialog(html) { $("#dlgInner").innerHTML = html; $("#dlg").showModal(); $("#dlg").scrollTop = 0; }
+  function openDialog(html) {
+    $("#dlgInner").innerHTML = html;
+    const dialog = $("#dlg");
+    dialog.showModal();
+    dialog.scrollTop = 0;
+    document.querySelectorAll("#dlgInner .d-pic img.pic").forEach(async img => {
+      // 圖源先隱藏；包含快取圖片也等解碼完成，才在排版後顯示。
+      try { await img.decode(); } catch { return; }
+      requestAnimationFrame(() => {
+        if (dialog.open && img.isConnected && img.naturalWidth > 0) {
+          img.closest(".d-pic").classList.add("image-ready");
+        }
+      });
+    });
+  }
 
   /* 段落：依換行分段，每段首行縮排兩字 */
   const paras = t => String(t || "").split(/\n+/).filter(s => s.trim()).map(s => `<p>${esc(s.trim())}</p>`).join("");
