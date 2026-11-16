@@ -97,12 +97,13 @@ section{padding:28px 0 56px}
 .chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 16px;font-size:15px}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
 .chip .n{opacity:.6;margin-left:4px;font-size:13px}
-.month{display:grid;grid-template-columns:110px 1fr;gap:28px;position:relative;padding-bottom:34px}
+#timeline{--timeline-gap:16px;display:grid;gap:var(--timeline-gap);align-content:start}
+.month{display:grid;grid-template-columns:110px 1fr;gap:28px;position:relative;align-items:start}
 .month::before{content:"";position:absolute;left:54px;top:70px;bottom:0;width:2px;background:var(--line)}
 .month-label{position:sticky;top:calc(84px + env(safe-area-inset-top,0px));align-self:start;text-align:center}
 .month-label b{display:block;font-family:var(--font-hand);font-size:46px;line-height:1.1}
 .month-label small{color:var(--muted);font-size:13px}
-.month-events{display:grid;gap:16px}
+.month-events{display:grid;gap:var(--timeline-gap);align-content:start}
 .ev{display:grid;grid-template-columns:240px 1fr 104px;grid-template-areas:"img body pick";background:var(--surface);border:2px solid var(--line);border-radius:18px;overflow:hidden;transition:border-color .2s}
 .ev.picked{border-color:var(--stamp)}
 .ev-body{grid-area:body;padding:20px 22px 20px 0;align-self:start}
@@ -355,7 +356,7 @@ dialog{max-width:760px}
 .d-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:15px;color:var(--muted)}
 .d-title{font-size:26px!important;line-height:1.45!important;margin:10px 40px 18px 0!important}
 .d-pic{position:relative;width:fit-content;max-width:100%;margin:0 auto 22px}
-.d-pic .pic{width:auto;max-width:100%;height:auto;max-height:450px;aspect-ratio:auto;object-fit:contain}
+.d-pic .pic{width:auto;max-width:100%;height:auto;max-height:400px;aspect-ratio:auto;object-fit:contain}
 .d-pic .pic-source{position:absolute;right:8px;bottom:8px;max-width:calc(100% - 16px);margin:0}
 .d-pic .source-tag{background:rgba(27,37,89,.85);border-color:transparent;color:#fff}
 .explain{margin:0;max-width:52em;padding:2px 0 2px 14px;border-left:3px solid var(--line);font-size:15px;line-height:1.75;color:var(--muted)}

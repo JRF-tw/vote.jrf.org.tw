@@ -51,12 +51,13 @@ function setup(storage = {}, options = {}) {
     return elements.get(id);
   };
   document.querySelector = element;
+  const scrolls = [];
   const context = vm.createContext({
-    window: { scrollTo() {} },
+    window: { scrollY: 200, scrollTo(...args) { scrolls.push(args); } },
     document,
     localStorage: { getItem: key => storage[key] ?? null, setItem(key, value) { storage[key] = value; } },
     location: { pathname: '/', search: '', hash: '' }, history: { pushState() {} },
-    setTimeout, clearTimeout
+    setTimeout, clearTimeout, requestAnimationFrame: callback => callback()
   });
   for (const file of ['assets/config.js', 'data/events.js', 'assets/event-topics.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context);
@@ -92,7 +93,7 @@ function setup(storage = {}, options = {}) {
   assert.ok(boot >= 0, 'application bootstrap marker must exist');
   vm.runInContext(appSource.slice(0, boot) +
     'window.test = {go, openDetail, togglePick, personaOf, toggleTagList, toggleFilter, st}; })();', context);
-  return { ...context.window, element, document, events: data.events,
+  return { ...context.window, element, document, scrolls, events: data.events,
     buttonsFor: code => timelineButtons.filter(button => button.dataset.pick === code) };
 }
 
@@ -116,7 +117,11 @@ test('active-year events have valid unique codes, used tags, local images and ne
     assert.ok(event.title.trim() && event.summary.trim());
     assert.ok(event.tags.length > 0);
     assert.equal(new Set(event.tags).size, event.tags.length);
-    if (event.image) assert.ok(fs.statSync(path.join(root, event.image)).isFile(), event.image);
+    if (event.image) {
+      const image = fs.readFileSync(path.join(root, event.image));
+      assert.equal(image.readUInt32BE(16), event.imageWidth, `${event.image} width`);
+      assert.equal(image.readUInt32BE(20), event.imageHeight, `${event.image} height`);
+    }
     assert.ok(event.news.length > 0);
     for (const news of event.news) {
       assertDate(news.date);
@@ -211,6 +216,11 @@ test('details render current titles, full paragraphs and primary-news emphasis w
   for (const event of events) {
     app.openDetail(event.code);
     const html = element('#dlgInner').innerHTML;
+    if (event.image) {
+      assert.ok(html.includes(`width="${event.imageWidth}" height="${event.imageHeight}"`));
+      assert.ok(html.includes(`aspect-ratio:auto ${event.imageWidth}/${event.imageHeight}`));
+      assert.ok(html.includes('loading="eager"'));
+    }
     assert.ok(html.includes(escape(event.title)));
     for (const paragraph of (event.full || event.summary).split(/\n+/).filter(text => text.trim())) {
       assert.ok(html.includes(`<p>${escape(paragraph.trim())}</p>`));
@@ -291,6 +301,26 @@ test('event tags toggle the same filter as the toolbar without changing selected
   assert.deepEqual([...new Set(articles(element('#timeline').innerHTML).map(codeOf))], Array.from(events, event => event.code));
   assert.ok(element('#timeline').innerHTML.includes(`data-f="${escape(tag)}" aria-pressed="false"`));
   assert.deepEqual(Array.from(app.st.picks), [events[0].code]);
+});
+
+test('card tag filtering keeps event 5 below the sticky header when enabling and clearing a filter', () => {
+  const { test: app, element, scrolls, events } = setup();
+  const event = events.find(event => event.code === '5');
+  app.go('review');
+  element('.topbar').getBoundingClientRect = () => ({ bottom: 96 });
+  const selector = '#timeline [data-event-code="5"]';
+  element(selector).getBoundingClientRect = () => ({ top: 500 });
+  scrolls.length = 0;
+  for (const expectedCount of [events.filter(item => item.tags.includes(event.tags[0])).length, events.length]) {
+    app.toggleFilter(event.tags[0], '5');
+    assert.equal(new Set(articles(element('#timeline').innerHTML).map(codeOf)).size, expectedCount);
+    assert.ok(element('#timeline').innerHTML.includes('data-event-code="5"'));
+    assert.equal(scrolls.at(-1)[0].top, 200 + 500 - 96 - 16);
+    assert.equal(scrolls.at(-1)[0].behavior, 'instant');
+  }
+  assert.equal(scrolls.length, 2);
+  app.toggleFilter(event.tags[0]);
+  assert.equal(scrolls.length, 2, 'toolbar filtering does not anchor to an event');
 });
 
 test('repeat cards show the current news headline and open their event without a separate review button or image credit', () => {

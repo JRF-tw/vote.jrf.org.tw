@@ -166,7 +166,7 @@
       const u = ev.target.closest("[data-unpick]"); if (u) return togglePick(u.dataset.unpick);
       const p = ev.target.closest("[data-pick]"); if (p) return togglePick(p.dataset.pick);
       const o = ev.target.closest("[data-open]"); if (o) return openDetail(o.dataset.open, o.dataset.year);
-      const f = ev.target.closest("[data-f]"); if (f) toggleFilter(f.dataset.f);
+      const f = ev.target.closest("[data-f]"); if (f) toggleFilter(f.dataset.f, f.closest("[data-event-code]")?.dataset.eventCode);
     });
   }
   const main = html => { $("#main").innerHTML = html; };
@@ -179,7 +179,8 @@
   const imageRatio = e => Object.prototype.hasOwnProperty.call(IMAGE_RATIOS, e.imageRatio) ? e.imageRatio : "3:2";
   const imageRatioClass = e => IMAGE_RATIOS[imageRatio(e)];
   /* 圖片：沒有圖時顯示預留框 */
-  const picHTML = e => e.image ? `<img class="pic ${imageRatioClass(e)}" src="${esc(e.image)}" alt="" loading="lazy">`
+  // 提供原圖尺寸，讓圖片載入前就能排好彈窗，避免圖源標籤閃現及版面跳動。
+  const picHTML = (e, detail = false) => e.image ? `<img class="pic ${imageRatioClass(e)}" src="${esc(e.image)}" alt=""${e.imageWidth > 0 && e.imageHeight > 0 ? ` width="${e.imageWidth}" height="${e.imageHeight}"${detail ? ` style="width:${e.imageWidth}px;aspect-ratio:auto ${e.imageWidth}/${e.imageHeight}"` : ""}` : ""} loading="${detail ? "eager" : "lazy"}">`
     : DEV ? `<span class="pic-ph ${imageRatioClass(e)}"><span><b>🖼</b>圖片預留<br>建議 ${imageRatio(e)}</span></span>` : `<span class="pic-ph pic-empty ${imageRatioClass(e)}">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;
@@ -200,7 +201,7 @@
     openDialog(`
       <div class="d-meta"><span class="ev-code">${e.code}</span>${tagsHTML(e)}<span>${dateOf(e)}</span></div>
       <h2 class="d-title">${esc(e.title)}</h2>
-      ${hasPic(e) ? `<div class="d-pic">${picHTML(e)}${picCredit(e)}</div>` : ""}
+      ${hasPic(e) ? `<div class="d-pic">${picHTML(e, true)}${picCredit(e)}</div>` : ""}
       <h3 class="d-sec">事件回顧</h3>
       <div class="full">${e.full ? paras(e.full) : paras(e.summary) + (DEV ? `<p class="draft-note" style="text-indent:0">詳細版撰寫中，目前先顯示簡短版。</p>` : "")}</div>
       <h3 class="d-sec">相關事件時間軸</h3>
@@ -274,10 +275,19 @@
 
   /* ===================== 大事記 ===================== */
   let filter = "全部";
-  function toggleFilter(tag) {
+  function toggleFilter(tag, eventCode) {
     if (tag !== "全部" && !TAGS.includes(tag)) return;
     filter = filter === tag ? "全部" : tag;
     renderReviewList();
+    if (eventCode) requestAnimationFrame(() => {
+      const card = document.querySelector(`#timeline [data-event-code="${eventCode}"]`);
+      if (!card) return;
+      const headerBottom = document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + card.getBoundingClientRect().top - headerBottom - 16),
+        behavior: "instant"
+      });
+    });
   }
   function pageReview() {
     filter = PARAMS.tag || "全部";
@@ -327,7 +337,7 @@
               <span class="ring">${STAMP()}</span><span class="pick-label">${locked ? (on ? "我圈的" : "") : (on ? "已圈" : "圈選")}</span>
             </button>`;
           const cls = `${on ? "picked" : ""} ${hasPic(e) ? "" : "noimg"}`;
-          if (repeat) return `<article class="ev repeat ${cls}">
+          if (repeat) return `<article class="ev repeat ${cls}" data-event-code="${e.code}">
             ${imgBtn(e, true)}
             <div class="ev-body">
               <h3><time class="repeat-date" datetime="${n.date.replaceAll("/", "-")}">${fmtD(n.date)}</time> <span class="news-source" style="${mediaStyle(n.media)}">${esc(n.media)}</span> <button class="repeat-news" data-open="${e.code}">${esc(n.title)}</button></h3>
@@ -335,7 +345,7 @@
             </div>${pick}
           </article>`;
           const others = keyNews(e).filter(k => k !== n).map(k => monthLabel(k.date));
-          return `<article class="ev ${cls}">
+          return `<article class="ev ${cls}" data-event-code="${e.code}">
             ${imgBtn(e)}
             <div class="ev-body">
               <div class="ev-top"><span class="ev-code">${e.code}</span>${tagsHTML(e, true)}<span>${fmtD(n.date)}</span>${others.length ? `<span class="dup">相關事件也出現在${others.join("、")}</span>` : ""}</div>
