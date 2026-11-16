@@ -194,7 +194,7 @@
   const imageRatioClass = e => IMAGE_RATIOS[imageRatio(e)];
   /* 圖片：沒有圖時顯示預留框 */
   // 提供原圖尺寸，讓圖片載入前就能排好彈窗，避免圖源標籤閃現及版面跳動。
-  const picHTML = (e, detail = false) => e.image ? `<img class="pic ${imageRatioClass(e)}" src="${esc(e.image)}" alt=""${e.imageWidth > 0 && e.imageHeight > 0 ? ` width="${e.imageWidth}" height="${e.imageHeight}"${detail ? ` style="width:${e.imageWidth}px;aspect-ratio:auto ${e.imageWidth}/${e.imageHeight}"` : ""}` : ""} loading="${detail ? "eager" : "lazy"}">`
+  const picHTML = (e, detail = false) => e.image ? `<img class="pic ${imageRatioClass(e)}" src="${esc(e.image)}" alt=""${detail && e.imageWidth > 0 && e.imageHeight > 0 ? ` width="${e.imageWidth}" height="${e.imageHeight}" style="width:${e.imageWidth}px;aspect-ratio:auto ${e.imageWidth}/${e.imageHeight}"` : ""} loading="${detail ? "eager" : "lazy"}">`
     : DEV ? `<span class="pic-ph ${imageRatioClass(e)}"><span><b>🖼</b>圖片預留<br>建議 ${imageRatio(e)}</span></span>` : `<span class="pic-ph pic-empty ${imageRatioClass(e)}">${STAMP()}</span>`;
   /* 正式版沒有圖片時，不顯示圖片區塊 */
   const hasPic = e => !!e.image || DEV;

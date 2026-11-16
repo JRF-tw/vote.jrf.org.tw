@@ -233,6 +233,20 @@ test('details render current titles, full paragraphs and primary-news emphasis w
   }
 });
 
+test('timeline thumbnails keep CSS sizing while detail images reserve their dimensions', () => {
+  const { test: app, element, events } = setup();
+  app.go('review');
+  const images = [...element('#timeline').innerHTML.matchAll(/<img\b[^>]*>/g)];
+  assert.ok(images.length > 0);
+  for (const [image] of images) {
+    assert.doesNotMatch(image, /\s(?:width|height|style)=/);
+    assert.match(image, /loading="lazy"/);
+  }
+  const event = events.find(event => event.image);
+  app.openDetail(event.code);
+  assert.ok(element('#dlgInner').innerHTML.includes(`width="${event.imageWidth}" height="${event.imageHeight}"`));
+});
+
 test('dialog image credits wait for image decoding and ignore replaced images', async () => {
   let resolveDecode;
   const classes = new Set();
