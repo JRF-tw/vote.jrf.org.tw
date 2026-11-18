@@ -9,6 +9,14 @@
     2023: 'https://tadels.law.ncku.edu.tw/questionnaire/2023-%E8%AA%BF%E6%9F%A5%E3%80%90%E5%8F%B8%E6%B3%95%E4%BF%A1%E8%B3%B4%E9%A1%8C%E7%B5%84%E3%80%91/',
     2024: 'https://tadels.law.ncku.edu.tw/questionnaire/2024-%E8%87%BA%E7%81%A3%E6%B3%95%E5%BE%8B%E8%88%87%E7%A4%BE%E6%9C%83%E8%AE%8A%E9%81%B7%E8%AA%BF%E6%9F%A5%E7%AC%AC6%E6%9C%9F-2%E3%80%90b-%E5%8F%B8%E6%B3%95%E4%BF%A1%E8%B3%B4-1%E3%80%91/'
   };
+  const sourceMeta = {
+    2009: {name:'2009年｜司法制度公正性、滿意度及執法人員信賴度', page:null},
+    2014: {name:'2014年｜正式調查結果報告（PDF）', page:'頁碼未標示'},
+    2019: {name:'2019年｜完整面訪次數分配表（PDF）', page:'頁碼未標示'},
+    2022: {name:'2022年｜逐題調查結果', page:null},
+    2023: {name:'2023年｜司法信賴題組（一）', page:null},
+    2024: {name:'2024年｜司法信賴題組（一）', page:null}
+  };
   const labels = {
     court: ['很滿意','還算滿意','不太滿意','很不滿意','不知道','拒答'],
     fair: ['很公正','還算公正','不太公正','很不公正','不知道','拒答'],
@@ -22,7 +30,7 @@
   const q = (seriesId, year, questionCode, questionText, method, sampleSize, counts, optionLabels, notes = '') => ({
     seriesId, year, questionCode, questionText, method, sampleSize,
     responses: optionLabels.map((label, i) => ({ label, count: counts[i] })),
-    positiveResponseIndices: [0, 1], sourceUrl: source[year], notes
+    positiveResponseIndices: [0, 1], sourceUrl: source[year], sourceName: sourceMeta[year].name, sourcePage: year === 2019 && /^F1-/.test(questionCode) ? '40' : sourceMeta[year].page, notes
   });
   const common = {
     court: '整體而言，請問您對臺灣的法院滿不滿意？並包含訴訟處理速度、法官態度、法院設施等。',

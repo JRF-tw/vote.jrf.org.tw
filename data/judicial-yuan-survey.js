@@ -8,7 +8,9 @@
     }))};
   }
   window.JRF_JUDICIAL_SURVEY = {
+    sourceName:'司法院｜一般民眾對司法認知調查（歷年調查報告）',
     sourceUrl:'https://www.judicial.gov.tw/tw/lp-1262-1.html',
+    sourcePage:null,
     metrics:[
       metric('law','不管發生什麼事情，都應該要遵守法律',109,
         [[92.0,4.9],[91.1,4.7],[90.7,5.0],[92.4,5.2],[91.6,5.8],[90.4,5.5]],'#2F5BD3'),
@@ -40,6 +42,31 @@
         [[55.7,42.5],[51.7,46.2],[59.1,33.9],[54.3,42.2],[61.3,36.0],[63.9,29.2],[65.1,31.3],[65.2,31.8],[64.7,30.3],[65.1,23.4]],'#246E87')
     ]
   };
+  // 114 年官方報告附錄一原始問句；問卷印刷頁碼與 PDF 檔案頁碼分開記錄。
+  // 僅此年度經本次逐題核對，不將題號套用到其他年度。
+  const questionSource = 'https://www.judicial.gov.tw/tw/dl-254691-ec0673de13f940c089caf99035bb6c2e.html';
+  const originalQuestions = {
+    law: ['3-1', '您支不支持「不管發生什麼事情，都應該要遵守法律」？', 57, 65],
+    punish: ['3-2', '您支不支持「國家應該用提高刑罰的方式嚇阻犯罪」？', 57, 65],
+    silence: ['3-3', '您支不支持「被告面對自己不利的問題可以選擇不用回答」？', 57, 65],
+    sentence: ['5-3', '您同不同意目前「我國大部分的法官都能盡力對罪犯作適當的判刑」？', 58, 66],
+    lawful: ['5-2', '您同不同意目前「我國大部分的法官都能依法判決」？', 58, 66],
+    independent: ['5-1', '請問您同不同意目前「我國大部分的法官能夠獨立審判」？', 58, 66],
+    judge_trust: ['6', '整體來說，您信任「法官」嗎？', 59, 67],
+    court_overall: ['16', '就您到法院的整體經驗而言，您覺得滿不滿意？', 62, 70],
+    judge_attitude: ['13-1', '對法官問案的態度，感到滿不滿意？', 60, 68],
+    hearing_time: ['13-2', '對法官給您陳述或答辯的時間，感到滿不滿意？', 60, 68],
+    case_progress: ['13-4', '對法官審理案件的進度，感到滿不滿意？', 60, 68],
+    credibility: ['13-5', '對法官審判的公信力，感到滿不滿意？', 60, 68]
+  };
+  window.JRF_JUDICIAL_SURVEY.metrics.forEach(metric => {
+    const [questionCode, questionText, printedPage, pdfPage] = originalQuestions[metric.id];
+    Object.assign(metric, {questionText, questionCode, questionYear: 114,
+      questionSourceUrl: questionSource + '#page=' + pdfPage, printedPage, pdfPage});
+    if (metric.id === 'independent') {
+      metric.questionPreface = '本題問題前，有以下說明文字：「我國憲法規定，法官須依據法律獨立審判。獨立審判是不受上級長官、其他政府部門及政黨的干涉或壓力。...」';
+    }
+  });
   // 各年附錄二「整體／總計」列：[本題樣本數, 六個原始回答百分比]。
   // 原樣保留公布精度；不正規化、不覆寫上方的正負向合計或問法斷點。
   const distributions = {

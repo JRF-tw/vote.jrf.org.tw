@@ -520,6 +520,7 @@ a.source-tag:hover{text-decoration:underline;text-underline-offset:3px}
 .tadels-grid{grid-template-columns:repeat(2,1fr)}
 .tadels-card{scroll-margin-top:90px}
 .tadels-series-label{margin:0 0 12px;line-height:1.6}
+.survey-question{margin:8px 0 10px;line-height:1.65;color:var(--ink)}
 .tadels-table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tadels-table{margin-top:12px}
 .tadels-table caption{font-size:14px}
@@ -529,9 +530,9 @@ a.source-tag:hover{text-decoration:underline;text-underline-offset:3px}
 .tadels-point-detail{margin-top:14px;padding:14px 16px;background:var(--surface-2);border-left:4px solid var(--safety-accent);line-height:1.7}
 .tadels-point-detail .tadels-table{margin-top:8px}
 .tadels-note{margin:12px 0 0!important}
-.tadels-card .gvm-point{cursor:pointer;outline:none}
-.tadels-card .gvm-point[aria-pressed="true"] .gvm-dot{stroke:var(--ink);stroke-width:3}
-.tadels-card .gvm-point:focus-visible .gvm-dot{stroke:var(--ink);stroke-width:4}
+.tadels-card .survey-point{cursor:pointer;outline:none}
+.tadels-card .survey-point[aria-pressed="true"] .survey-dot{stroke:var(--ink);stroke-width:3}
+.tadels-card .survey-point:focus-visible .survey-dot{stroke:var(--ink);stroke-width:4}
 .tadels-card .ccu-safety-chart{min-height:230px}
 @media (max-width:700px){.tadels-card{padding:16px}.tadels-card .ccu-safety-number{font-size:38px}.tadels-methods{overflow-x:auto}.tadels-methods .ccu-table{min-width:680px}}
 @media(max-width:720px){
@@ -560,7 +561,9 @@ a.source-tag:hover{text-decoration:underline;text-underline-offset:3px}
 .ccu-safety-headline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:20px}
 .ccu-safety-number{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--safety-accent)}
 .ccu-safety-number>span{font-size:24px;font-weight:600;margin-left:2px}
+.ccu-safety-number>.survey-value-label{font-size:20px;margin-left:8px;letter-spacing:0}
 .ccu-safety-context{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:4px;font-size:14px;line-height:1.5;color:var(--safety-muted)}
+.survey-interactive-card .ccu-safety-context{margin-left:auto;align-items:flex-end;text-align:right}
 .ccu-safety-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:#FDF1E7;color:#A84A0C;font-size:13px;font-weight:600;white-space:nowrap}
 .ccu-safety-chip svg{width:12px;height:12px;margin:0;flex:none}
 .ccu-safety-plot{margin-top:0;overflow-x:auto;width:100%}
@@ -580,32 +583,59 @@ a.source-tag:hover{text-decoration:underline;text-underline-offset:3px}
 /* 最後繪製標籤，白色描邊保護字形，避免格線或其他序列穿過數字。 */
 .ccu-safety-chart .safety-label{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 
-/* 遠見臺灣社會信任調查；樣式限於新頁元件。 */
-.gvm-chart-wrap{position:relative;min-width:0;width:100%}
-.gvm-point{cursor:pointer;touch-action:manipulation}
-.gvm-point:focus-visible{outline:none}
-.gvm-point:focus-visible .gvm-dot,.gvm-point:hover .gvm-dot{stroke:var(--safety-ink);stroke-width:3px;r:6px}
-.gvm-tooltip{position:absolute;transform:translateX(-50%);max-width:100%;padding:5px 9px;background:var(--ink);color:#fff;border-radius:8px;pointer-events:none;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 2px 8px #1b255922}
-.gvm-tooltip[hidden]{display:none}
-.gvm-data-note{border-left:3px solid var(--jrf);padding:12px 18px;margin:0;background:var(--surface-2);border-radius:0 12px 12px 0}
-.gvm-source-note{font-size:14px;color:var(--muted);margin:4px 0 16px}
-.gvm-entry{margin-bottom:22px}
-.gvm-entry h3{margin-top:0}
+/* 互動民調圖表；司法院與 TaDELS 共用。 */
+.survey-chart-wrap{position:relative;min-width:0;width:100%}
+.survey-point{cursor:pointer;touch-action:manipulation;pointer-events:all}
+.survey-point>circle{pointer-events:all}
+.survey-hit-area{pointer-events:all;cursor:pointer}
+.survey-point:focus-visible{outline:none}
+.survey-point:focus-visible .survey-dot,.survey-point:hover .survey-dot{stroke:var(--safety-ink);stroke-width:3px;r:6px}
+.survey-tooltip{position:static;transform:none;width:100%;box-sizing:border-box;margin-top:10px;padding:10px 0 0;background:transparent;color:var(--safety-ink,#1B2433);border:0;border-top:1px solid #E3E7EE;border-radius:0;font-size:12px;line-height:1.5;white-space:normal;font-variant-numeric:tabular-nums}
+.survey-interactive-card .ccu-safety-plot,.tadels-card .ccu-safety-plot{position:relative;overflow:visible}
+.survey-tooltip[hidden]{display:block;visibility:hidden;pointer-events:none}
+.survey-detail-animating{overflow:hidden;will-change:height,opacity}
+.survey-tooltip a{color:var(--safety-accent,#2F5BD3);text-decoration:underline;display:inline-block;margin-top:6px;font-size:12px}
+.survey-distribution{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;align-items:center;margin:8px 0}
+.survey-pie{display:block;width:100px;height:100px;margin:0}
+.survey-distribution-meta{color:var(--safety-muted,#5B6577);font-size:11px;margin-top:3px}
+.survey-detail-header{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.survey-detail-header .survey-distribution-meta{margin:0;flex:1;min-width:0;line-height:1.8}
+.survey-source-button{font:inherit;font-size:11px;line-height:1.6;color:var(--safety-accent,#2F5BD3);background:#F2F5FA;border:1px solid #D8DFEA;border-radius:5px;padding:2px 7px;cursor:pointer;flex:none}
+.survey-source-button:hover,.survey-source-button:focus-visible{background:#E4EBF7}
+.survey-source-history{font-size:11px;margin-top:5px;color:var(--safety-muted,#5B6577)}
+.survey-source-history summary{cursor:pointer}
+.tadels-grid,.poll-grid:has(.survey-interactive-card){align-items:start}
+.survey-distribution-legend{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;margin:0;font-size:12px;line-height:1.5}
+.survey-distribution-legend dt{display:flex;align-items:baseline;gap:5px;min-width:0}
+.survey-distribution-legend dd{margin:0;text-align:right;white-space:nowrap}
+.survey-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.survey-distribution-note{font-size:11px;color:var(--safety-muted,#5B6577);margin:6px 0 0}
+.survey-note-list{padding-left:1.8em;list-style:decimal outside}
+.survey-note-list.survey-note-single{list-style-type:disc}
+.survey-note-list li{padding-left:.25em;line-height:1.7}
+.survey-note-list li+li{margin-top:4px}
+.survey-point[aria-pressed="true"] .survey-dot{stroke:var(--safety-ink);stroke-width:3px}
+.safety-label-layer{pointer-events:none}
+@media(max-width:480px){.survey-distribution{grid-template-columns:76px minmax(0,1fr);gap:8px}.survey-pie{width:76px;height:76px}.survey-distribution-legend{font-size:11px;gap:3px 5px}}
+.survey-tooltip-question{margin:5px 0;color:#F4D6B8}
+.survey-tooltip-main{font-weight:700;margin:5px 0}
+.survey-tooltip-source-label{margin-top:8px;color:#F4D6B8}
+.survey-tooltip-table{width:100%;border-collapse:collapse;margin-top:7px;font-size:12px}
+.survey-tooltip-table th,.survey-tooltip-table td{padding:3px 5px;border-bottom:1px solid #ffffff44;text-align:left}
+.survey-tooltip-table th:not(:first-child),.survey-tooltip-table td:not(:first-child){text-align:right;white-space:nowrap}
+.survey-tooltip-note{border-top:1px solid #ffffff44;margin-top:8px;padding-top:7px;color:#F9D8B4}
 @media(max-width:480px){
-  .poll.gvm-trust-card{padding:16px}
-  .gvm-chart .safety-axis{font-size:16px}
+  .poll.survey-interactive-card{padding:16px}
 }
-
-.gvm-trust-card .ccu-safety-plot,.gvm-entry .ccu-safety-plot{position:relative}
 
 /* 司法院調查沿用共用圖卡；提示列出原報告正、負向合計。 */
 .judicial-audience{margin-top:28px}
 body[data-page="judicial-yuan-survey"] .ccu-safety-plot,.judicial-yuan-entry .ccu-safety-plot{position:relative}
-body[data-page="judicial-yuan-survey"] .gvm-tooltip,.judicial-yuan-entry .gvm-tooltip{white-space:pre;line-height:1.6;text-align:left}
+body[data-page="judicial-yuan-survey"] .survey-tooltip,.judicial-yuan-entry .survey-tooltip{white-space:pre;line-height:1.6;text-align:left}
 body[data-page="judicial-yuan-survey"] .safety-label-layer,.judicial-yuan-entry .safety-label-layer{pointer-events:none}
 /* 僅司法院原始回答提示：六個選項及樣本數；避免高浮層被繪圖容器裁切。 */
 body[data-page="judicial-yuan-survey"] .ccu-safety-plot,.judicial-yuan-entry .ccu-safety-plot{overflow:visible}
-body[data-page="judicial-yuan-survey"] .gvm-tooltip,.judicial-yuan-entry .gvm-tooltip{z-index:5;width:max-content;white-space:normal}
+body[data-page="judicial-yuan-survey"] .survey-tooltip,.judicial-yuan-entry .survey-tooltip{z-index:5;width:100%;white-space:normal}
 .judicial-tooltip-distribution{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:2px 16px;margin:6px 0 0}
 .judicial-tooltip-distribution dt,.judicial-tooltip-distribution dd{margin:0;white-space:nowrap}
 .judicial-tooltip-distribution dd{text-align:right;font-variant-numeric:tabular-nums}

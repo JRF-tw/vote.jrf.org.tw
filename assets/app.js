@@ -108,10 +108,10 @@
     if (!fromHistory) { try { history.pushState({ page: PAGE, params: params || {} }, "", PAGE === "home" ? location.pathname + location.search : "#" + PAGE); } catch (e) { } }
     PARAMS = params || {};
     document.body.dataset.page = PAGE;
-    const navName = PAGE === "judicial-yuan-survey" ? "司法院一般民眾對司法認知調查" : PAGE === "gvm-survey" ? "遠見臺灣社會信任調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : PAGE === "tadels-survey" ? "臺灣法律與社會變遷調查" : (NAV.find(n => n[0] === PAGE) || [])[1];
+    const navName = PAGE === "judicial-yuan-survey" ? "司法院一般民眾對司法認知調查" : PAGE === "ccu-survey" ? "臺灣民眾對司法與犯罪防制滿意度調查（2018–2025）" : PAGE === "tadels-survey" ? "臺灣法律與社會變遷調查" : (NAV.find(n => n[0] === PAGE) || [])[1];
     document.title = (navName ? navName + "｜" : "") + `${YEAR} 年度司法大事記｜民間司改會`;
     if ($("#dlg").open) $("#dlg").close();
-    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "gvm-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls" : PAGE === "tadels-survey" ? "polls" : PAGE)));
+    document.querySelectorAll(".nav [data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === (["ccu-survey", "judicial-yuan-survey"].includes(PAGE) ? "polls" : PAGE === "tadels-survey" ? "polls" : PAGE)));
     document.querySelectorAll(".nav [aria-current]").forEach(a => a.setAttribute("aria-current", "page"));
     // 手機版選單可橫向捲動：把目前頁面的按鈕捲進畫面
     const cur = $(".nav [aria-current]"), nav = $(".nav");
@@ -681,10 +681,6 @@
             <span class="poll-directory-meta">臺灣法實證研究資料庫｜2009–2024 年</span><h3>臺灣法律與社會變遷調查</h3>
             <p>法院與法律專業評價、法律公平性及大法官表現。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 9 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
           </a>
-          <a class="poll-directory-card" href="#gvm-survey" data-go="gvm-survey">
-            <span class="poll-directory-meta">遠見臺灣社會信任調查｜2006–2024 年</span><h3>遠見臺灣社會信任調查</h3>
-            <p>法官與警察信任程度，以及司法公平正義的社會評價。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 3 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
-          </a>
           <a class="poll-directory-card" href="#ccu-survey" data-go="ccu-survey">
             <span class="poll-directory-meta">國立中正大學犯罪研究中心｜2018–2025 年</span><h3>臺灣民眾對司法與犯罪防制滿意度調查</h3>
             <p>刑事審判公正性、治安與警政、犯罪防制及死刑議題。</p><span class="poll-directory-bottom"><span class="poll-directory-count">節錄 6 組指標</span><span class="poll-directory-link">查看調查結果</span></span>
@@ -697,11 +693,6 @@
   function pageCcuSurvey() {
     main(window.JRF_CCU_PAGE.render());
     window.JRF_CCU_PAGE.bind($("#main"));
-  }
-
-  function pageGvmSurvey() {
-    main(window.JRF_GVM_PAGE.render());
-    window.JRF_GVM_PAGE.bind($("#main"));
   }
 
   function pageJudicialYuanSurvey() {
@@ -745,7 +736,7 @@
       </div></section>`);
   }
 
-  const PAGES = { home: pageHome, review: pageReview, result: pageResult, polls: pagePolls, "ccu-survey": pageCcuSurvey, "gvm-survey": pageGvmSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
+  const PAGES = { home: pageHome, review: pageReview, result: pageResult, polls: pagePolls, "ccu-survey": pageCcuSurvey, "judicial-yuan-survey": pageJudicialYuanSurvey, "tadels-survey": pageTadelsSurvey, about: pageAbout };
   renderChrome();
   window.addEventListener("popstate", e => { const s = e.state || {}; go(s.page || pageFromHash(), s.params || {}, true); });
   window.addEventListener("resize", renderTray);

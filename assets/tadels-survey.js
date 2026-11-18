@@ -8,13 +8,11 @@
   const link = (label, url) => `<a href="${url}" target="_blank" rel="noopener">${esc(label)} ↗</a>`;
   const methods = row => `${row.method}${row.year === 2019 ? '（訪問方式由電話改為面訪）' : row.year === 2024 ? '（改採網路調查）' : ''}`;
   const chartRows = (rows, seriesId) => rows.filter(row => row.seriesId === seriesId).map(row => ({...row, value: mainPct(row)}));
-  const responseTable = row => `<div class="tadels-table-scroll"><table class="ccu-table tadels-table"><caption>${row.year}年｜題號 ${esc(row.questionCode)}｜${esc(methods(row))}｜該題分母 ${row.sampleSize.toLocaleString()} 人</caption><thead><tr><th scope="col">回答選項</th><th scope="col">原始人數</th><th scope="col">占全體受詢問者</th></tr></thead><tbody>${row.responses.map(x => `<tr><th scope="row">${esc(x.label)}</th><td>${typeof x.count === 'number' ? x.count.toLocaleString() : '未核實'}</td><td>${pct(x.count,row.sampleSize)}</td></tr>`).join('')}</tbody></table></div>`;
-  const detail = row => `<div class="tadels-detail-content"><p><strong>原始問卷題幹：</strong>${esc(row.questionText)}</p>${responseTable(row)}<p class="meta"><strong>官方來源：</strong>${link('查看原始資料',row.sourceUrl)}</p>${row.notes ? `<p class="ccu-notice tadels-note"><strong>資料註記：</strong>${esc(row.notes)}</p>` : ''}</div>`;
-  const tooltip = row => `<strong>${row.year}年｜${esc(methods(row))}</strong><br>主要比例：${mainPct(row) === null ? '未能計算' : mainPct(row).toFixed(1) + '%'}<br><button type="button" class="tadels-tooltip-action" data-detail-year="${row.year}">查看該年度完整回答</button>`;
   function card(series) {
     const [id, title, label, color] = series, rows = chartRows(D().rows,id), valid = rows.filter(r => r.value !== null), latest = valid[valid.length - 1];
-    const chart = window.JRF_SURVEY_CHARTS.chart(rows,'value',label,color,{min:0,max:100,ticks:[0,25,50,75,100],interactive:true,tooltipText: row => `${row.year}年｜${methods(row)}｜${row.value === null ? '未能計算' : row.value.toFixed(1)+'%'}`});
-    return `<article class="poll ccu-poll ccu-safety tadels-card" data-series="${id}" style="--safety-accent:${color}"><h2>${esc(title)}</h2><p class="meta tadels-series-label">${esc(label)}${id === 'lawPowerful' ? '。比例越高，代表越多受訪者認同法律偏袒權勢者，並不代表司法信任程度越高。' : ''}</p><div class="ccu-safety-headline"><div class="ccu-safety-number">${latest && latest.value !== null ? latest.value.toFixed(1) : '—'}<span>%</span></div><div class="ccu-safety-context"><span class="ccu-safety-year">${latest ? latest.year : ''} 年</span><span class="meta">共 ${rows.length} 個實際年度資料點</span></div></div>${chart}<div class="tadels-point-detail" role="status" aria-live="polite" hidden></div><div class="tadels-details"><button type="button" class="btn btn-ghost btn-small tadels-details-toggle" aria-expanded="false">查看詳細數據</button><div class="tadels-details-body" hidden>${rows.map(detail).join('')}</div></div></article>`;
+    const question = rows[0].questionText;
+    const chart = window.JRF_SURVEY_CHARTS.chart(rows,'value',question,color,{min:0,max:100,ticks:[0,25,50,75,100],interactive:true,tooltipText: row => `${row.year}年｜${methods(row)}｜${row.value === null ? '未能計算' : row.value.toFixed(1)+'%'}`});
+    return `<article class="poll ccu-poll ccu-safety tadels-card" data-series="${id}" style="--safety-accent:${color}"><h2>${esc(question)}</h2><p class="meta tadels-series-label"><strong>目前比例意義：</strong>${esc(label)}${id === 'lawPowerful' ? '。比例越高，代表越多受訪者認同法律偏袒權勢者，並不代表司法信任程度越高。' : ''}</p><div class="ccu-safety-headline"><div class="ccu-safety-number">${latest && latest.value !== null ? latest.value.toFixed(1) : '—'}<span>%</span></div><div class="ccu-safety-context"><span class="ccu-safety-year">${latest ? latest.year : ''} 年</span><span class="meta">共 ${rows.length} 個實際年度資料點</span></div></div>${chart}</article>`;
   }
   function render() {
     const dataWarnings = D().dataWarnings.length;
@@ -26,8 +24,25 @@
   }
   function bind(root) {
     root.querySelectorAll('[data-tadels-jump]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const t = root.querySelector('#' + a.dataset.tadelsJump); t.focus({preventScroll:true}); t.scrollIntoView({block:'start'}); }));
-    root.querySelectorAll('.tadels-details-toggle').forEach(button => button.addEventListener('click', () => { const body = button.nextElementSibling; const expanded = button.getAttribute('aria-expanded') === 'true'; button.setAttribute('aria-expanded', String(!expanded)); button.textContent = expanded ? '查看詳細數據' : '收起詳細數據'; body.hidden = expanded; }));
-    root.querySelectorAll('.tadels-card .gvm-point').forEach(point => { const show = () => { const card = point.closest('.tadels-card'), row = chartRows(D().rows,card.dataset.series).find(r => String(r.year) === point.dataset.year), box = card.querySelector('.tadels-point-detail'); card.querySelectorAll('.gvm-point').forEach(p => p.setAttribute('aria-pressed', String(p === point))); box.innerHTML = detail(row); box.hidden = false; }; point.addEventListener('click',show); point.addEventListener('keydown',e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); } }); });
+    root.querySelectorAll('.tadels-card').forEach(card => {
+      window.JRF_SURVEY_CHARTS.bindDistribution(card, (panel, point, explaining) => {
+        const row = D().rows.find(r => r.seriesId === card.dataset.series && String(r.year) === point.dataset.year);
+        if (!row) return;
+        const distribution = window.JRF_SURVEY_CHARTS.distribution(row.responses.map(response => ({
+          label:response.label,
+          count:response.count,
+          percentage:typeof response.count === 'number' ? response.count / row.sampleSize * 100 : null
+        })));
+        const knownTotal = row.responses.reduce((sum,response) => sum + (typeof response.count === 'number' ? response.count : 0),0);
+        const incomplete = knownTotal !== row.sampleSize || row.responses.some(response => typeof response.count !== 'number');
+        const header = `<div class="survey-detail-header"><button type="button" class="survey-source-button" data-survey-explain aria-pressed="${explaining}">${explaining ? '資料來源' : '詳細資料'}</button>${explaining ? '' : '<span class="survey-distribution-meta">' + row.year + '年｜調查樣本：' + row.sampleSize.toLocaleString() + ' 人｜' + esc(row.method) + (row.questionCode ? '｜題號 ' + esc(row.questionCode) : '') + '</span>'}</div>`;
+        const explanation = `<a href="${row.sourceUrl}" target="_blank" rel="noopener">${esc(row.sourceName)}${row.sourcePage ? '｜PDF 頁碼：' + esc(row.sourcePage) : ''} ↗</a>${row.notes ? '<p class="survey-distribution-note">' + esc(row.notes) + '</p>' : ''}${incomplete ? '<p class="survey-distribution-note">原表人數不齊或合計有疑義；圓餅扇形僅呈現已列人數的相對分布，列表百分比仍以該題分母計算，未補值。</p>' : ''}`;
+        const history = D().rows.filter(r => r.seriesId === row.seriesId && r.year !== row.year).map(r =>
+          `<p class="survey-distribution-note"><strong>${r.year}年｜${esc(r.questionCode)}｜${esc(methods(r))}</strong><br>${esc(r.questionText)}<br>${link(r.sourceName + (r.sourcePage ? '｜PDF 頁碼：' + r.sourcePage : ''),r.sourceUrl)}${r.notes ? '<br>' + esc(r.notes) : ''}</p>`
+        ).join('');
+        panel.innerHTML = header + (explaining ? explanation + '<details class="survey-source-history"><summary>歷年題目與來源說明</summary>' + history + '</details>' : distribution);
+      });
+    });
   }
   function preview() { const s = D().series[1], rows = chartRows(D().rows,s[0]); return `<div class="ccu-preview" style="--chart-color:${s[3]};--safety-accent:${s[3]};--safety-grid:#E6E9EF;--safety-muted:#5B6577"><h4>${esc(s[1])}</h4>${window.JRF_SURVEY_CHARTS.chart(rows,'value',s[2],s[3],{min:0,max:100,ticks:[0,25,50,75,100]})}</div>`; }
   window.JRF_TADELS_PAGE = {render,bind,preview};

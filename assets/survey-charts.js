@@ -1,4 +1,4 @@
-/* 中正與遠見調查共用的SVG圖卡、資料標籤避讓與最新值版型。 */
+/* 司法民調共用的 SVG 圖卡、資料標籤避讓與最新值版型。 */
 (function () {
   'use strict';
   const percent = value => Number.isInteger(value) ? value.toFixed(1) : String(value);
@@ -41,7 +41,8 @@
       const halfWidth = text.length*font*0.34 + 4;
       const purple = point.field === 'conditionallyOpposeAbolition';
       const offsets = purple ? [24,34,44,54] : [-16,24,-28,36,-40,48];
-      const candidates = offsets.flatMap(dy => [0,-12,12].map(dx => {
+      const xOffsets = last ? [28,40,-28,52,-44,0] : point.index === rows.length - 2 ? [-28,-40,28,-52,44,0] : [0,-12,12];
+      const candidates = offsets.flatMap(dy => xOffsets.map(dx => {
         const labelX = Math.max(44+halfWidth,Math.min(504-halfWidth,point.x+dx));
         const labelY = Math.max(18,Math.min(240,point.y+dy));
         const box = {left:labelX-halfWidth,right:labelX+halfWidth,top:labelY-font-3,bottom:labelY+4};
@@ -72,10 +73,21 @@
       ['conditionallyOpposeAbolition','基本上不贊成廢除死刑，但如有配套措施願意考慮','#7550A0','6 3']
     ] : [[key,title,color,'']];
     const labelPositions = placeLabels(series,rows,x,y);
+    // 時間軸仍按實際年份定位；相鄰年份太近時，標籤上下錯開。
+    const yearLanes = [];
+    const laneEnds = [-Infinity, -Infinity];
+    rows.forEach((row, i) => {
+      const halfWidth = String(row.year).length * (i === rows.length - 1 ? 18 : 12) * .34 + 4;
+      const left = x(i) - halfWidth;
+      const lane = left > laneEnds[0] + 6 ? 0 : 1;
+      yearLanes.push(lane);
+      laneEnds[lane] = x(i) + halfWidth;
+    });
+    const staggerYears = yearLanes.includes(1);
     const line = field => segmentIndices(rows,field).map(group => group.map((i,j) => `${j ? 'L' : 'M'}${x(i)} ${y(rows[i][field])}`).join(' ')).join(' ');
     const area = segmentIndices(rows,key).filter(group => group.length > 1).map(group => `${group.map((i,j) => `${j ? 'L' : 'M'}${x(i)} ${y(rows[i][key])}`).join(' ')} L${x(group[group.length-1])} ${y(min)} L${x(group[0])} ${y(min)} Z`).join(' ');
     const legend = series.length > 1 ? `<ul class="ccu-legend" aria-label="圖例">${series.map(([,label,c,dash]) => `<li><svg viewBox="0 0 30 12" aria-hidden="true"><line x1="0" x2="30" y1="6" y2="6" stroke="${c}" stroke-width="3" stroke-dasharray="${dash}"/></svg><span style="color:${c}">${label}</span></li>`).join('')}</ul>` : '';
-    return `<div class="ccu-safety-plot"><svg class="ccu-safety-chart" viewBox="0 0 510 270" role="${options.interactive ? 'group' : 'img'}" aria-label="${rows[0].year} 至 ${latest.year} 年${title}折線圖，${latest.year} 年為 ${percent(latest[key])}%，縱軸${min}%至${max}%" aria-describedby="${key}-values">
+    return `<div class="ccu-safety-plot"><svg class="ccu-safety-chart" viewBox="0 0 510 ${staggerYears ? 292 : 270}" role="${options.interactive ? 'group' : 'img'}" aria-label="${rows[0].year} 至 ${latest.year} 年${title}折線圖，${latest.year} 年為 ${percent(latest[key])}%，縱軸${min}%至${max}%" aria-describedby="${key}-values">
       <desc id="${key}-values">${series.map(([field,label]) => `${label}：${rows.filter(row => hasValue(row[field])).map(row => options.tooltipText ? options.tooltipText(row) : `${row.year}年${percent(row[field])}%`).join('；')}`).join('。')}。</desc>
       ${ticks.map(value => `<line x1="44" x2="490" y1="${y(value)}" y2="${y(value)}" stroke="var(--safety-grid)"/><text class="safety-axis" x="32" y="${y(value)+4}" text-anchor="end">${value}%</text>`).join('')}
       <path d="${area}" fill="${color}" fill-opacity="0.07"/>
@@ -83,17 +95,17 @@
         ${rows.map((row,i) => {
           if (!hasValue(row[field])) return '';
           const last = row.year === latest.year;
-          return `<g${options.interactive ? ` class="gvm-point" tabindex="0" role="button" data-year="${row.year}" data-value="${percent(row[field])}"${options.tooltipText ? ` data-tooltip="${options.tooltipText(row)}"` : ''} data-x="${x(i)}" data-y="${y(row[field])}" aria-label="${options.tooltipText ? options.tooltipText(row) : `${row.year}年｜${percent(row[field])}%`}"` : ''}><title>${options.interactive ? (options.tooltipText ? options.tooltipText(row) : `${row.year}年｜${percent(row[field])}%`) : `${label}，${row.year}年：${percent(row[field])}%`}</title>
-          ${options.interactive ? `<circle cx="${x(i)}" cy="${y(row[field])}" r="18" fill="transparent"/>` : ''}
+          return `<g${options.interactive ? ` class="survey-point" tabindex="0" role="button" style="pointer-events:all" data-year="${row.year}" data-value="${percent(row[field])}"${options.tooltipText ? ` data-tooltip="${options.tooltipText(row)}"` : ''}${options.sourceUrl ? ` data-source-url="${options.sourceUrl}"` : ''} data-x="${x(i)}" data-y="${y(row[field])}" aria-label="${options.tooltipText ? options.tooltipText(row) : `${row.year}年｜${percent(row[field])}%`}"` : ''}>${options.interactive ? '' : `<title>${label}，${row.year}年：${percent(row[field])}%</title>`}
+          ${options.interactive ? `<circle class="survey-hit-area" pointer-events="all" cx="${x(i)}" cy="${y(row[field])}" r="18" fill="transparent"/>` : ''}
           ${last ? `<circle cx="${x(i)}" cy="${y(row[field])}" r="9" fill="${c}" fill-opacity="0.15"/>` : ''}
-          <circle cx="${x(i)}" cy="${y(row[field])}" r="${last ? 5 : 3.5}" fill="${last ? c : 'white'}" stroke="${last ? 'white' : c}" stroke-width="2"${options.interactive ? ' class="gvm-dot"' : ''}/></g>`;
+          <circle cx="${x(i)}" cy="${y(row[field])}" r="${last ? 5 : 3.5}" fill="${last ? c : 'white'}" stroke="${last ? 'white' : c}" stroke-width="2"${options.interactive ? ' class="survey-dot"' : ''}/></g>`;
         }).join('')}</g>`).join('')}
       <g class="safety-label-layer">${labelPositions.map(p => {
         const color = series.find(([field]) => field === p.field)[2];
         return `<text class="safety-label${p.last ? ' safety-label-latest' : ''}"${p.last ? ` style="fill:${color}"` : ''} data-series="${p.field}" data-year="${rows[p.index].year}" x="${p.labelX}" y="${p.labelY}" text-anchor="middle">${p.text}</text>`;
       }).join('')}</g>
-      ${rows.map((row,i) => `<text class="safety-axis${i === rows.length-1 ? ' safety-year-latest' : ''}" x="${x(i)}" y="262" text-anchor="middle">${row.year}</text>`).join('')}
-      </svg>${options.interactive ? '<div class="gvm-tooltip" role="status" aria-live="polite" hidden></div>' : ''}</div>${legend}`;
+      ${rows.map((row,i) => `<text class="safety-axis${i === rows.length-1 ? ' safety-year-latest' : ''}" x="${x(i)}" y="${262 + yearLanes[i] * 22}" text-anchor="middle">${row.year}</text>`).join('')}
+      </svg>${options.interactive ? '<div class="survey-tooltip" role="status" aria-live="polite" hidden></div>' : ''}</div>${legend}`;
   }
   function trendCard(rows, key, metricTitle, metricColor, options = {}) {
     const title = options.title || metricTitle, color = options.color || metricColor;
@@ -101,13 +113,151 @@
     const latest = validRows[validRows.length-1], previous = validRows[validRows.length-2];
     const delta = +(latest[key]-previous[key]).toFixed(1);
     const arrow = delta < 0 ? 'M6 2v8M2.5 6.5L6 10l3.5-3.5' : 'M6 10V2M2.5 5.5L6 2l3.5 3.5';
-    return `<article class="poll ccu-poll ccu-safety${options.interactive ? ' gvm-trust-card' : ''}" data-metric="${key}" style="--safety-accent:${color}">
-      <h2>${title}</h2>${options.rangeLabel ? `<span class="meta">${options.rangeLabel}</span>` : ''}
-      <div class="ccu-safety-headline"><div class="ccu-safety-number">${percent(latest[key])}<span>%</span></div>
+    return `<article class="poll ccu-poll ccu-safety${options.interactive ? ' survey-interactive-card' : ''}" data-metric="${key}" style="--safety-accent:${color}">
+      <h2>${options.questionText || title}</h2>${options.rangeLabel ? `<span class="meta">${options.rangeLabel}</span>` : ''}
+      <div class="ccu-safety-headline"><div class="ccu-safety-number">${percent(latest[key])}<span>%</span>${options.valueLabel ? '<span class="survey-value-label">' + options.valueLabel + '</span>' : ''}</div>
       <div class="ccu-safety-context"><span class="ccu-safety-year">${latest.year} 年</span><span class="ccu-safety-chip">${options.comparisonLabel || '較前一年度'}${delta === 0 ? '<span>持平</span>' : `<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="${arrow}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${Math.abs(delta).toFixed(1)}%</span>`}</span></div></div>
       ${trendChart(rows,key,title,color,options)}
       ${options.note ? `<p class="meta">${options.note}</p>` : ''}
     </article>`;
   }
-  window.JRF_SURVEY_CHARTS = {chart:trendChart,card:trendCard};
+
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function distribution(responses) {
+    const colors = ['#2F5BD3','#7196E5','#DFAF62','#BD624C','#9BA4B2','#687283'];
+    const total = responses.reduce((sum, response) => sum + (Number.isFinite(response.percentage) ? response.percentage : 0), 0);
+    let angle = -Math.PI / 2;
+    const slices = responses.map((response, i) => {
+      const fraction = total > 0 && Number.isFinite(response.percentage) ? response.percentage / total : 0;
+      const start = angle;
+      angle += fraction * Math.PI * 2;
+      if (!fraction) return '';
+      const title = escapeHtml(response.label + '：' + response.percentage.toFixed(1) + '%');
+      if (fraction >= .999999) return '<circle cx="60" cy="60" r="56" fill="' + colors[i % colors.length] + '"><title>' + title + '</title></circle>';
+      const path = 'M60 60 L' + (60 + 56 * Math.cos(start)) + ' ' + (60 + 56 * Math.sin(start)) + ' A56 56 0 ' + (fraction > .5 ? 1 : 0) + ' 1 ' + (60 + 56 * Math.cos(angle)) + ' ' + (60 + 56 * Math.sin(angle)) + ' Z';
+      return '<path d="' + path + '" fill="' + colors[i % colors.length] + '" stroke="white" stroke-width="1"><title>' + title + '</title></path>';
+    }).join('');
+    return '<div class="survey-distribution"><svg class="survey-pie" viewBox="0 0 120 120" role="img" aria-label="回答選項分布，詳細數值見右側列表">' + slices + '</svg><dl class="survey-distribution-legend">' + responses.map((response,i) =>
+      '<dt><span class="survey-swatch" style="background:' + colors[i % colors.length] + '"></span>' + escapeHtml(response.label) + '</dt><dd>' +
+      (response.count === undefined ? '' : (Number.isFinite(response.count) ? response.count.toLocaleString() + ' 人' : '人數未列／未核實') + '｜') +
+      (Number.isFinite(response.percentage) ? response.percentage.toFixed(1) + '%' : '—') + '</dd>'
+    ).join('') + '</dl></div>';
+  }
+  function bindDistribution(card, renderPoint) {
+    const panel = card.querySelector('.survey-tooltip');
+    const points = [...card.querySelectorAll('.survey-point')];
+    if (!panel || !points.length) return;
+    let selected = points[points.length - 1];
+    let explaining = true;
+    let resetTimer;
+    let renderedExplanation;
+    let renderedPoint;
+    let transitioning = false;
+    let changeAnimation;
+    function replaceContent(explanation) {
+      renderPoint(panel, selected, explanation);
+      panel.hidden = false;
+      renderedExplanation = explanation;
+      renderedPoint = selected;
+    }
+    function render(explanation) {
+      // 快速滑過多個年度時，只在目前動畫結束後套用最後選取的狀態。
+      if (transitioning) return;
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (panel.hidden || !panel.animate || reduceMotion) {
+        replaceContent(explanation);
+        return;
+      }
+      if (renderedExplanation === explanation && renderedPoint === selected) return;
+      if (changeAnimation) {
+        changeAnimation.cancel();
+        changeAnimation = null;
+      }
+      if (renderedExplanation === explanation) {
+        // 年度切換不收合，只淡入新分布，提示內容已更新。
+        replaceContent(explanation);
+        changeAnimation = panel.animate(
+          [{opacity: .45, transform: 'translateY(3px)'}, {opacity: 1, transform: 'translateY(0)'}],
+          {duration: 240, easing: 'ease-out'}
+        );
+        return;
+      }
+      transitioning = true;
+      panel.classList.add('survey-detail-animating');
+      const styles = window.getComputedStyle(panel);
+      const expanded = {
+        height: panel.getBoundingClientRect().height + 'px', opacity: 1,
+        paddingTop: styles.paddingTop, marginTop: styles.marginTop, borderTopWidth: styles.borderTopWidth
+      };
+      const collapsed = {height: '0px', opacity: 0, paddingTop: '0px', marginTop: '0px', borderTopWidth: '0px'};
+      const collapse = panel.animate(
+        [expanded, collapsed],
+        {duration: 180, easing: 'ease-in', fill: 'forwards'}
+      );
+      collapse.onfinish = () => {
+        // 舊內容完全收合後才替換，避免說明及圓餅圖在半途中互換。
+        collapse.cancel();
+        replaceContent(explaining);
+        const expand = panel.animate(
+          [collapsed, {...expanded, height: panel.getBoundingClientRect().height + 'px'}],
+          {duration: 260, easing: 'cubic-bezier(.22,1,.36,1)'}
+        );
+        expand.onfinish = () => {
+          panel.classList.remove('survey-detail-animating');
+          transitioning = false;
+          // 動畫期間若又移動到其他年度，更新至最後要求的內容。
+          render(explaining);
+        };
+      };
+    }
+    function explain() {
+      clearTimeout(resetTimer);
+      explaining = true;
+      render(true);
+      points.forEach(p => p.setAttribute('aria-pressed', 'false'));
+    }
+    function scheduleReset() {
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(explain, 1000);
+    }
+    function show(point) {
+      clearTimeout(resetTimer);
+      if (selected === point && !explaining) return;
+      selected = point;
+      explaining = false;
+      render(false);
+      points.forEach(p => p.setAttribute('aria-pressed', String(p === point)));
+    }
+    points.forEach((point, index) => {
+      ['pointerenter','mouseenter','focus','click'].forEach(type => point.addEventListener(type, () => show(point)));
+      point.addEventListener('pointerleave', event => {
+        if (event.pointerType !== 'touch') scheduleReset();
+      });
+      const hit = point.querySelector('.survey-hit-area');
+      if (hit) ['pointerenter','mouseenter','click'].forEach(type => hit.addEventListener(type, () => show(point)));
+      point.addEventListener('keydown', event => {
+        let next = index;
+        if (['ArrowRight','ArrowDown'].includes(event.key)) next = Math.min(index + 1, points.length - 1);
+        else if (['ArrowLeft','ArrowUp'].includes(event.key)) next = Math.max(index - 1, 0);
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = points.length - 1;
+        else if (event.key === 'Escape') { explain(); return; }
+        else if (!['Enter',' '].includes(event.key)) return;
+        event.preventDefault();
+        points[next].focus();
+        show(points[next]);
+      });
+    });
+    panel.addEventListener('click', event => {
+      if (event.target.closest('[data-survey-explain]')) explain();
+    });
+    panel.addEventListener('pointerenter', () => clearTimeout(resetTimer));
+    panel.addEventListener('pointerleave', scheduleReset);
+    card.addEventListener('mouseleave', scheduleReset);
+    card.addEventListener('focusout', event => {
+      if (!card.contains(event.relatedTarget)) scheduleReset();
+    });
+    explain();
+  }
+  window.JRF_SURVEY_CHARTS = {chart:trendChart,card:trendCard,distribution,bindDistribution};
 })();
